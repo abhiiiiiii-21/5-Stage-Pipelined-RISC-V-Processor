@@ -1,0 +1,133 @@
+% =============================================================================
+% ps_id_stage.tex -- Proposed Solution: Instruction Decode Stage
+% (author: Yogesh Modi, 2401010519). References: docs/report/refs_yogesh.bib
+% Modules: rtl/reg_file.v, rtl/imm_gen.v, rtl/control_unit.v, rtl/id_ex_reg.v
+% =============================================================================
+\subsection{Instruction Decode Stage}
+\label{sec:id_stage}
+
+The Instruction Decode (ID) stage receives the instruction and its PC from the
+IF/ID register and produces everything the EX stage needs: the two source
+operands, the sign-extended immediate and the control signals. The register
+fields are taken directly from fixed bit positions of the
+instruction~\cite{ym_riscv_spec}: \texttt{rd = instr[11:7]},
+\texttt{funct3 = instr[14:12]}, \texttt{rs1 = instr[19:15]},
+\texttt{rs2 = instr[24:20]} and \texttt{funct7b5 = instr[30]}. Because these
+positions do not depend on the format, the register file is read in parallel
+with opcode decoding. The stage consists of four modules: \texttt{reg\_file},
+\texttt{imm\_gen}, \texttt{control\_unit} and \texttt{id\_ex\_reg}.
+
+\subsubsection{Register File with Write-First Bypass}
+\texttt{reg\_file} holds the 32 general-purpose 32-bit registers in the array
+\texttt{regs[0:31]}. It has two combinational read ports
+(\texttt{rs1}$\rightarrow$\texttt{rd1}, \texttt{rs2}$\rightarrow$\texttt{rd2})
+for the instruction in ID and one write port (\texttt{rd}, \texttt{wd},
+\texttt{we}) driven by the WB stage and written on the rising clock edge. A
+synchronous active-high reset clears every register. Register \texttt{x0} is
+hard-wired to zero: a write with \texttt{rd = 0} is ignored and a read of
+\texttt{x0} always returns 0.
+
+When an instruction in WB writes a register in the same cycle in which the
+instruction in ID reads it, a plain register file would return the old value.
+Our register file therefore has a \emph{write-first bypass}:
+\[
+\texttt{rd1} = \left\{
+\begin{array}{ll}
+0 & \texttt{rs1} = 0\\
+\texttt{wd} & \texttt{we} \land \texttt{rd} = \texttt{rs1}\\
+\texttt{regs[rs1]} & \mbox{otherwise}
+\end{array}
+\right.
+\]
+and likewise for \texttt{rd2}. This removes the WB$\rightarrow$ID data hazard
+without an extra forwarding path, which matches the ``write in the first half,
+read in the second half'' behaviour described in~\cite{ym_patterson_cod_riscv}.
+
+\subsubsection{Immediate Generator}
+\texttt{imm\_gen} selects the immediate format from the opcode and
+sign-extends it to 32 bits (Table~\ref{tab:imm_formats}). The sign bit is always
+\texttt{instr[31]}, so sign extension uses the same wire in every format. The B
+and J immediates encode multiples of two, so bit~0 is forced to 0. R-type
+instructions have no immediate and produce 0. For \texttt{SLLI}, \texttt{SRLI}
+and \texttt{SRAI} the I-type immediate also contains \texttt{funct7}. Only its
+lower five bits are used as the shift amount by the ALU.
+
+\begin{table}[!t]
+\centering
+\caption{Immediate formats produced by \texttt{imm\_gen}}
+\label{tab:imm_formats}
+\footnotesize
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Format} & \textbf{Opcodes} & \textbf{32-bit immediate} \\
+\hline
+I & ITYPE, LOAD, JALR & \{20$\times$i[31], i[31:20]\} \\
+S & STORE & \{20$\times$i[31], i[31:25], i[11:7]\} \\
+B & BRANCH & \{19$\times$i[31], i[31], i[7], i[30:25], i[11:8], 0\} \\
+U & LUI & \{i[31:12], 12$\times$0\} \\
+J & JAL & \{11$\times$i[31], i[31], i[19:12], i[20], i[30:21], 0\} \\
+--- & R-type, other & 0 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Main Control Unit}
+\texttt{control\_unit} is a combinational decoder of the 7-bit opcode. Every
+output first takes a default value of 0, so an unsupported opcode produces no
+register write, no memory access and no branch, and behaves like a NOP. The
+truth table is given in Table~\ref{tab:control}. \texttt{alu\_op} gives the
+class of operation and is refined in EX by \texttt{alu\_control} using
+\texttt{funct3} and \texttt{funct7b5}. \texttt{mem\_read} is also used by the
+hazard unit to detect load-use hazards. \texttt{jump} and \texttt{jalr} make
+the EX stage write $PC+4$ to \texttt{rd}, and \texttt{lui} forces ALU operand
+A to zero so that the ALU result equals the U-type immediate.
+
+\begin{table*}[!t]
+\centering
+\caption{Main control unit truth table}
+\label{tab:control}
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{Opcode} & \textbf{reg\_write} & \textbf{mem\_read} & \textbf{mem\_write} &
+\textbf{mem\_to\_reg} & \textbf{alu\_src} & \textbf{alu\_op} & \textbf{branch} &
+\textbf{jump} & \textbf{jalr} & \textbf{lui} \\
+\hline
+R-type (0110011) & 1 & 0 & 0 & 0 & 0 & 10 & 0 & 0 & 0 & 0 \\
+I-ALU (0010011)  & 1 & 0 & 0 & 0 & 1 & 11 & 0 & 0 & 0 & 0 \\
+LOAD (0000011)   & 1 & 1 & 0 & 1 & 1 & 00 & 0 & 0 & 0 & 0 \\
+STORE (0100011)  & 0 & 0 & 1 & 0 & 1 & 00 & 0 & 0 & 0 & 0 \\
+BRANCH (1100011) & 0 & 0 & 0 & 0 & 0 & 01 & 1 & 0 & 0 & 0 \\
+JAL (1101111)    & 1 & 0 & 0 & 0 & 0 & 00 & 0 & 1 & 0 & 0 \\
+JALR (1100111)   & 1 & 0 & 0 & 0 & 1 & 00 & 0 & 0 & 1 & 0 \\
+LUI (0110111)    & 1 & 0 & 0 & 0 & 1 & 00 & 0 & 0 & 0 & 1 \\
+other            & 0 & 0 & 0 & 0 & 0 & 00 & 0 & 0 & 0 & 0 \\
+\hline
+\end{tabular}
+\end{table*}
+
+\subsubsection{ID/EX Pipeline Register and Bubble Insertion}
+\texttt{id\_ex\_reg} stores, on every rising clock edge, the ten control
+signals, the PC, both register values, the immediate, the register addresses
+\texttt{rs1}, \texttt{rs2}, \texttt{rd} (needed by the forwarding and hazard
+units) and the \texttt{funct3}/\texttt{funct7b5} fields. Following the
+project naming rule, each input carries the prefix \texttt{id\_} and the
+corresponding output the prefix \texttt{ex\_}. When \texttt{rst} or
+\texttt{flush} is asserted, all outputs are cleared to zero. All-zero control
+signals form a \emph{bubble}: it writes no register, does not access memory and
+does not branch. The hazard unit asserts \texttt{flush} in two cases. For a
+load-use hazard, the PC and IF/ID hold their values for one cycle and the bubble
+enters EX in place of the dependent instruction. For a taken branch or jump
+resolved in EX, the instruction in ID was fetched wrongly and is cancelled. The
+register has no enable input, because a stall is handled by holding IF/ID and
+inserting a bubble here.
+
+\subsubsection{Verification}
+Each module has a self-checking Icarus Verilog testbench that prints PASS/FAIL
+per check and dumps a VCD waveform. \texttt{tb\_reg\_file} covers reset,
+write-then-read, simultaneous reads, writes to \texttt{x0} and the write-first
+bypass on both ports (20 checks). \texttt{tb\_imm\_gen} applies real RV32I
+machine-code words in all formats, including negative immediates and backward
+branch and jump offsets (15 checks). \texttt{tb\_control\_unit} checks every
+row of Table~\ref{tab:control} and three unsupported opcodes (11 checks).
+\texttt{tb\_id\_ex\_reg} checks reset, pass-through of all 19 signals, holding
+between clock edges and the flush bubble (7 checks). All 53 checks pass.

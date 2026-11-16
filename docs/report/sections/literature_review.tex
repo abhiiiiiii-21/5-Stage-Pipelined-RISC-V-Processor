@@ -1,0 +1,99 @@
+% =============================================================================
+% literature_review.tex -- Literature Review (author: Yogesh Modi, 2401010519)
+% References: docs/report/refs_yogesh.bib
+% =============================================================================
+\section{Literature Review}
+\label{sec:literature}
+
+\subsection{The Classic Five-Stage RISC Pipeline}
+Reduced Instruction Set Computer (RISC) design was shaped by early academic
+processors such as Berkeley RISC~I, which showed that a small set of simple,
+fixed-length instructions with a load/store architecture and a large register
+file can be implemented efficiently in VLSI~\cite{ym_patterson_risc1}. Simple,
+regular instructions make pipelining natural. The textbook organisation used in
+teaching and in many small cores is the five-stage pipeline of Patterson and
+Hennessy~\cite{ym_patterson_cod_riscv}: Instruction Fetch (IF), Instruction
+Decode and register read (ID), Execute or address calculation (EX), Memory
+access (MEM) and Write Back (WB), separated by the pipeline registers IF/ID,
+ID/EX, EX/MEM and MEM/WB. Ideally one instruction completes every clock cycle,
+while each stage only has to do a fraction of the work of a single-cycle
+design. Harris and Harris~\cite{ym_harris_ddca_riscv} present the same
+organisation at the hardware-description level and build a pipelined RISC-V
+processor step by step in SystemVerilog/VHDL, which makes it a direct guide for
+an HDL implementation.
+
+\subsection{The RISC-V Instruction Set Architecture}
+RISC-V is an open, royalty-free instruction set architecture developed at the
+University of California, Berkeley~\cite{ym_waterman_thesis}. Its design goals
+include a small base integer ISA that is sufficient for a complete software
+stack, optional standard extensions, and an encoding that simplifies hardware.
+The unprivileged specification~\cite{ym_riscv_spec} defines the 32-bit base
+integer set RV32I with 32 general-purpose registers, where register \texttt{x0}
+is hard-wired to zero. Instructions use six formats (R, I, S, B, U and J).
+The source and destination register fields are kept in the same bit positions in
+every format, and the immediate sign bit is always instruction bit~31. This lets
+the decoder read the register file in parallel with decoding the opcode and makes
+the immediate generator a small multiplexer. These properties are exploited
+directly by the Instruction Decode stage of our design.
+
+\subsection{Pipeline Hazards and Their Handling}
+Overlapping instructions introduces three kinds of
+hazards~\cite{ym_patterson_cod_riscv}. \emph{Structural hazards} occur when two
+instructions need the same hardware resource at once; they are avoided by
+separate instruction and data memories (a Harvard organisation) and a register
+file with independent read and write ports. \emph{Data hazards} occur when an
+instruction needs a result that an earlier instruction has not yet written back.
+The simplest fix is to \emph{stall} the pipeline by inserting bubbles, but
+\emph{forwarding} (bypassing) the result from the EX/MEM or MEM/WB registers to
+the ALU inputs removes most stalls. A load followed immediately by a dependent
+instruction (the load-use case) still needs a one-cycle stall, because the
+loaded value is only available after MEM. Writing the register file in the first
+half of the cycle and reading it in the second half, or an equivalent
+write-first bypass, removes the WB-to-ID case. \emph{Control hazards} arise from
+branches and jumps, whose outcome is not known when the next instruction is
+fetched. Options include stalling, a static predict-not-taken policy that
+flushes the wrongly fetched instructions when a branch is taken, and dynamic
+branch prediction. Smith's study of branch prediction
+strategies~\cite{ym_smith_branch} showed that simple history-based predictors
+achieve high accuracy and motivated the counter-based predictors used in modern
+cores.
+
+\subsection{RISC-V Processor Implementations}
+Several open RISC-V cores show how pipeline depth is traded against area, power
+and performance. Gautschi \emph{et al.}~\cite{ym_gautschi_ri5cy} present RI5CY, a
+four-stage in-order RISC-V core with digital-signal-processing extensions such as
+hardware loops and SIMD operations, designed for near-threshold operation in
+energy-constrained Internet-of-Things (IoT) devices. Schiavone \emph{et
+al.}~\cite{ym_schiavone_ulp} compare RI5CY with smaller cores such as the
+two-stage Zero-riscy and Micro-riscy, and show that fewer pipeline stages and
+fewer features reduce area and power at the cost of performance. At the
+higher-performance end, the Rocket Chip generator~\cite{ym_asanovic_rocket}
+produces a five-stage in-order RISC-V core and complete SoCs from a
+parameterised Chisel description, and the Berkeley Out-of-Order Machine
+(BOOM)~\cite{ym_celio_boom} is a synthesizable, parameterised out-of-order
+RISC-V core. These works show the breadth of microarchitectures that the open
+ISA supports. They are, however, large, highly optimised designs that are not
+intended as a first study of pipelining.
+
+The open-source project ProtocolX~\cite{ym_protocolx_repo}, which our team
+studied as a reference, implements a five-stage RV32I pipeline in Verilog HDL
+with a forwarding unit for read-after-write hazards, a one-cycle stall for
+load-use hazards and a flush of wrongly fetched instructions on taken branches,
+and it is simulated with Icarus Verilog. Dynamic branch prediction is listed
+there only as future work.
+
+\subsection{Relation to Our Work}
+Our processor follows the classic five-stage organisation of
+\cite{ym_patterson_cod_riscv,ym_harris_ddca_riscv} and the RV32I encoding
+of~\cite{ym_riscv_spec}. Unlike the industrial cores
+of~\cite{ym_gautschi_ri5cy,ym_schiavone_ulp,ym_asanovic_rocket,ym_celio_boom},
+its scope is deliberately limited to a clear, fully verified teaching
+implementation: a defined RV32I subset (R-type and I-type ALU operations, LW,
+SW, BEQ, BNE, BLT, BGE, JAL, JALR and LUI), EX/MEM and MEM/WB forwarding, a
+one-cycle load-use stall, a write-first register-file bypass and a static
+predict-not-taken branch policy with a two-cycle flush. Compared with the
+reference project~\cite{ym_protocolx_repo}, our design is written from scratch
+against a shared interface specification, divided into independently owned
+modules, and every module has its own self-checking unit testbench in addition
+to the system-level tests. Dynamic branch prediction, the M extension,
+interrupts and FPGA synthesis are outside the Phase~I scope.

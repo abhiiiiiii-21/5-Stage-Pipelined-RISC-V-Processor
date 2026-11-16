@@ -1,0 +1,21 @@
+% =============================================================================
+% contrib_yogesh.tex -- Individual Contribution (Yogesh Modi, 2401010519)
+% =============================================================================
+\noindent\textbf{Yogesh Modi (2401010519) -- Instruction Decode Stage and
+Literature Review.}
+I designed and implemented the Instruction Decode stage of the processor in
+Verilog: the 32$\times$32-bit register file (\texttt{reg\_file.v}) with a
+hard-wired zero register, synchronous reset and a write-first bypass that
+removes the WB-to-ID data hazard; the immediate generator
+(\texttt{imm\_gen.v}) for the I, S, B, U and J formats; the main control unit
+(\texttt{control\_unit.v}) that decodes the opcode into the ten control
+signals of the pipeline with safe NOP defaults; and the ID/EX pipeline register
+(\texttt{id\_ex\_reg.v}) with flush-based bubble insertion used for load-use
+stalls and taken branches. I wrote a self-checking unit testbench for each
+module (\texttt{tb\_reg\_file.v}, \texttt{tb\_imm\_gen.v},
+\texttt{tb\_control\_unit.v}, \texttt{tb\_id\_ex\_reg.v}), using real RV32I
+encodings for the immediate tests, and all 53 checks pass in Icarus Verilog.
+I kept all port names consistent with the shared interface specification so
+that the stage integrates into the top-level module without changes. I also
+wrote the Literature Review section and the Instruction Decode Stage
+subsection of this report.

@@ -1,0 +1,6 @@
+flowchart LR
+  EXMEM["EX/MEM result"] -->|2'b10 newest| MUX["EX operand mux"]
+  MEMWB["MEM/WB wb_data"] -->|2'b01| MUX
+  REG["Register file"] -->|2'b00| MUX
+  MUX --> ALU["EX ALU"]
+  H["hazard_unit: load-use stall"] -.-> MUX

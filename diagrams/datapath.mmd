@@ -1,0 +1,27 @@
+flowchart LR
+  PC[PC / pc_reg] --> IM[instr_mem]
+  IM --> IFID[IF/ID]
+  IFID --> RF[reg_file]
+  IFID --> CTRL[control_unit]
+  IFID --> IMM[imm_gen]
+  RF --> IDEX[ID/EX]
+  CTRL --> IDEX
+  IMM --> IDEX
+  IDEX --> MUXA[Forwarding mux A]
+  IDEX --> MUXB[Forwarding mux B]
+  MUXA --> ALU[ALU]
+  MUXB --> ALU
+  IDEX --> BU[branch_unit]
+  ALU --> EXMEM[EX/MEM]
+  EXMEM --> DM[data_mem]
+  DM --> MEMWB[MEM/WB]
+  EXMEM --> FWD[forwarding_unit]
+  MEMWB --> FWD
+  FWD --> MUXA
+  FWD --> MUXB
+  MEMWB --> WBMUX[WB mux]
+  WBMUX --> RF
+  BU --> PC
+  HZ[hazard_unit] --> PC
+  HZ --> IFID
+  HZ --> IDEX

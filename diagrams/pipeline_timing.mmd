@@ -1,0 +1,4 @@
+flowchart TB
+  N["Normal: I1 IF-ID-EX-MEM-WB; I2 shifts one cycle right"]
+  S["Load-use: LW IF-ID-EX-MEM-WB; dependent IF-ID-BUBBLE-EX-MEM-WB"]
+  B["Taken branch: branch IF-ID-EX; younger instructions flushed; target fetched"]

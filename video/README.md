@@ -8,6 +8,14 @@ the upload is complete.
 **Duration target:** less than 5:00  
 **Link:** `ADD_FINAL_VIDEO_LINK_HERE`
 
+## Upload checklist
+
+- Confirm the final duration is below five minutes.
+- Show the repository test command and a real PASS summary.
+- Include at least one forwarding or load-use waveform.
+- Set the sharing mode to unlisted or “anyone with the link”.
+- Replace the placeholder above only after the upload has been verified.
+
 ## Segments
 
 1. 0:00–1:00 — Project idea and team introduction

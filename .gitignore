@@ -1,0 +1,19 @@
+# Simulation build output
+*.vvp
+*.vcd
+simulation/build/
+
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+
+# OS / editor files
+.DS_Store
+.vscode/
+.idea/

@@ -28,10 +28,11 @@ iverilog -g2012 -I rtl -DTEST=4 -s tb_riscv_top \
 vvp simulation/build/tb_riscv_top_4.vvp
 ```
 
-The script writes VCD files and logs to `simulation/build/`. Open a waveform with:
+The script writes one VCD file and one log per system test to `simulation/build/`.
+Open a waveform with:
 
 ```sh
-gtkwave simulation/build/tb_riscv_top.vcd
+gtkwave simulation/build/tb_riscv_top_4.vcd
 ```
 
 Useful signals to add are `dut.u_pc.pc`, `dut.if_instr`, `dut.id_instr`,

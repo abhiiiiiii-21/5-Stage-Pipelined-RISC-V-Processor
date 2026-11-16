@@ -17,6 +17,7 @@ module tb_riscv_top;
     integer cycle;
     integer pass_count = 0;
     integer fail_count = 0;
+    reg [255:0] vcd_file;
 
     riscv_pipeline_top #(.IMEM_FILE(PROGRAM)) dut (.clk(clk), .rst(rst));
     always #5 clk = ~clk;
@@ -48,7 +49,9 @@ module tb_riscv_top;
     endtask
 
     initial begin
-        $dumpfile("simulation/build/tb_riscv_top.vcd");
+        if (!$value$plusargs("VCD=%s", vcd_file))
+            vcd_file = "simulation/build/tb_riscv_top.vcd";
+        $dumpfile(vcd_file);
         $dumpvars(0, tb_riscv_top);
         repeat (2) @(posedge clk);
         rst = 1'b0;

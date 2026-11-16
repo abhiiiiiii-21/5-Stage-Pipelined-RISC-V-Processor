@@ -32,7 +32,8 @@ for n in 1 2 3 4 5 6; do
     out="simulation/build/tb_riscv_top_${n}.vvp"
     if iverilog -g2012 -I rtl -DTEST="$n" -s tb_riscv_top \
        -o "$out" "${RTL[@]}" testbench/tb_riscv_top.v &&
-       vvp "$out" | tee "simulation/build/test${n}.log" &&
+       vvp "$out" +VCD="simulation/build/tb_riscv_top_${n}.vcd" |
+           tee "simulation/build/test${n}.log" &&
        grep -q "TEST ${n}: PASS" "simulation/build/test${n}.log"; then
         echo "test${n}: PASS"
     else

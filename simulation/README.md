@@ -25,7 +25,7 @@ Run one system test:
 mkdir -p simulation/build
 iverilog -g2012 -I rtl -DTEST=4 -s tb_riscv_top \
   -o simulation/build/tb_riscv_top_4.vvp rtl/*.v testbench/tb_riscv_top.v
-vvp simulation/build/tb_riscv_top_4.vvp
+vvp simulation/build/tb_riscv_top_4.vvp +VCD=simulation/build/tb_riscv_top_4.vcd
 ```
 
 The script writes one VCD file and one log per system test to `simulation/build/`.

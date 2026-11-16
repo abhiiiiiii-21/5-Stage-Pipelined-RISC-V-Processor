@@ -2,7 +2,7 @@
 
 [![Verilog HDL](https://img.shields.io/badge/Language-Verilog_HDL-blue.svg)](rtl/)
 [![Simulator](https://img.shields.io/badge/Simulator-Icarus_Verilog-green.svg)](https://steveicarus.github.io/iverilog/)
-[![Phase](https://img.shields.io/badge/Phase_I-In_Progress-yellow.svg)](docs/interface_spec.md)
+[![Phase](https://img.shields.io/badge/Phase_I-Complete-brightgreen.svg)](report/main.pdf)
 
 MCA project (Phase I): design, implementation and verification of a 32-bit **5-stage pipelined
 RISC-V processor** supporting a subset of the **RV32I** base integer instruction set, written in
@@ -38,11 +38,11 @@ Overlapping instructions creates **hazards**. This design resolves them with:
 
 | Roll Number | Name | Part |
 |:---:|:---|:---|
-| 2401010020 | Abhishek Kumar Patel | Project lead: repository setup, interface specification, IF stage (PC, instruction memory, IF/ID register), top-level integration |
+| 2401010020 | Abhishek Kumar Patel | Project lead: repository setup, shared definitions (`defines.vh`), IF stage (PC, instruction memory, IF/ID register), top-level integration, IEEE report |
 | 2401010519 | Yogesh Modi | ID stage: register file, immediate generator, main control unit, ID/EX register; literature review |
 | 2401010210 | Kapish Rohilla | EX stage: ALU, ALU control, branch unit, EX stage with forwarding multiplexers, EX/MEM register |
 | 2401010503 | Vikash Kumar | MEM/WB stages and hazards: data memory, MEM/WB register, forwarding unit, hazard detection unit |
-| 2401020048 | Prateek Shakya | Verification (system testbench, test programs, run scripts), diagrams, IEEE report assembly, demo video |
+| 2401020048 | Prateek Shakya | Verification (system testbench, test programs, run script), diagram sketches, demo video |
 
 ---
 
@@ -56,8 +56,10 @@ Overlapping instructions creates **hazards**. This design resolves them with:
 | MEM | Load / store word | `data_mem`, `mem_wb_reg` |
 | WB | Write ALU result or loaded data to `rd` | write-back mux in `riscv_pipeline_top` |
 
-Hazard logic: `forwarding_unit`, `hazard_unit`. Full port lists and design decisions are in
-[`docs/interface_spec.md`](docs/interface_spec.md).
+Hazard logic: `forwarding_unit`, `hazard_unit`. Shared opcodes and control codes are in
+[`rtl/defines.vh`](rtl/defines.vh). Design details are in the [IEEE report](report/main.pdf).
+
+![Block diagram](diagrams/block_diagram.png)
 
 ### Supported instructions (RV32I subset)
 
@@ -80,9 +82,8 @@ testbench/unit/           self-checking unit testbench per module (tb_<module>.v
 testbench/programs/       test programs (.s assembly + .hex machine code)
 testbench/tb_riscv_top.v  system-level testbench
 simulation/               run scripts (build output in simulation/build/, git-ignored)
-diagrams/                 block diagrams, pipeline timing diagrams, waveform screenshots
-docs/interface_spec.md    shared interface specification
-docs/report/              IEEE report (LaTeX sources and compiled PDF)
+diagrams/                 block diagram, pipeline timing, hazard flowchart, waveform and CPI figures
+report/                   IEEE report (main.tex source, main.pdf)
 video/README.md           demo video link
 ```
 
@@ -103,19 +104,45 @@ vvp simulation/build/tb_pc_reg.vvp
 ```
 
 ### Run the full test suite
-A single script (`simulation/run_all.sh`) will run every unit and system test once integration is complete.
-This section will be updated with the final commands.
+```bash
+bash simulation/run_all.sh
+```
+This runs all 16 unit testbenches and the 6 system programs. Each system test also
+prints a `PERF:` line with the measured instructions, cycles, stalls, taken branches and CPI.
+See [`simulation/README.md`](simulation/README.md) for single tests and GTKWave.
+
+---
+
+## Results (Phase I)
+
+| Suite | Checks | Result |
+|-------|--------|--------|
+| 16 unit testbenches | 204 | PASS |
+| 6 system programs | 36 | PASS |
+
+| Program | Instructions | Cycles | CPI |
+|---------|-------------:|-------:|----:|
+| 1 arith | 21 | 25 | 1.19 |
+| 2 loadstore | 7 | 11 | 1.57 |
+| 3 forwarding | 6 | 10 | 1.67 |
+| 4 loaduse | 5 | 10 | 2.00 |
+| 5 branch_jump | 11 | 23 | 2.09 |
+| 6 sum_array | 40 | 57 | 1.43 |
+
+Every cycle count equals `N + 4 + S + 2T` (instructions, pipeline fill, load-use stalls,
+2 cycles per taken branch/jump). Synthesis results are planned for Phase II.
 
 ---
 
 ## Deliverables
 
-- IEEE report: [`docs/report/`](docs/report/)
-- Demo video: [`video/README.md`](video/README.md)
+- IEEE report: [`report/main.pdf`](report/main.pdf)
+- Diagrams: [`diagrams/`](diagrams/)
+- Demo video: [Google Drive](https://drive.google.com/drive/folders/1MsBRF6YmyPTbTrJbZ43O3noa1C6fjQQy?usp=sharing) (details in [`video/README.md`](video/README.md))
 
 ## Status
 
-Phase I — in progress. Module development is split across team branches and merged through pull requests.
+Phase I complete: all modules integrated, all tests pass, report and demo video included. Phase II will add synthesis results and further performance analysis.
 
 ## Reference
 

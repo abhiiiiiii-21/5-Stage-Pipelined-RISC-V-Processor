@@ -1,21 +1,23 @@
-# Diagram Sources
+# Diagrams
 
-The Mermaid source files describe the datapath and hazard paths:
+Rendered figures (PNG and SVG). They are the same figures used in the IEEE report
+(`report/main.pdf`); their LaTeX/TikZ source is in `report/main.tex`.
 
-- `datapath.mmd`: complete five-stage data path and control connections.
-- `pipeline_timing.mmd`: normal, load-use, and taken-branch timing summary.
+| File | Shows |
+|------|-------|
+| `block_diagram` | Five-stage datapath with pipeline registers, forwarding paths and hazard control |
+| `load_use_timing` | Pipeline timing of a load-use dependency: one-cycle stall, then MEM/WB forwarding |
+| `branch_flush_timing` | Taken branch resolved in EX and the two flushed instructions (test 5) |
+| `hazard_unit_flowchart` | Decision order of the hazard detection unit (flush before stall) |
+| `waveform_test4` | Key signals of system test 4 redrawn from the simulation trace |
+| `cpi_cycles_comparison` | Measured cycles per test program versus a non-pipelined baseline |
+| `design_flow` | Team design and verification flow |
+
+The Mermaid files are simple text sketches of the same structure:
+
+- `datapath.mmd`: five-stage data path and control connections.
+- `pipeline_timing.mmd`: normal, load-use and taken-branch timing summary.
 - `hazard_forwarding.mmd`: EX/MEM and MEM/WB forwarding priority.
 
-Render them with Mermaid CLI, Mermaid Live, or an editor extension. PNG exports and
-GTKWave screenshots should be generated locally after the system tests have run.
-
-With Mermaid CLI installed, PNG exports can be generated from the repository root:
-
-```sh
-npx --yes @mermaid-js/mermaid-cli -i diagrams/datapath.mmd -o diagrams/datapath.png
-npx --yes @mermaid-js/mermaid-cli -i diagrams/pipeline_timing.mmd -o diagrams/pipeline_timing.png
-npx --yes @mermaid-js/mermaid-cli -i diagrams/hazard_forwarding.mmd -o diagrams/hazard_forwarding.png
-```
-
-The generated PNGs are presentation artifacts and should be reviewed before recording
-the demonstration video.
+GTKWave waveforms come from running the tests (see `simulation/README.md`), for example
+`gtkwave simulation/build/tb_riscv_top_4.vcd`.

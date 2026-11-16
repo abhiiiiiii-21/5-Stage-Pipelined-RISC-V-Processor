@@ -3,4 +3,4 @@ flowchart LR
   MEMWB["MEM/WB wb_data"] -->|2'b01| MUX
   REG["Register file"] -->|2'b00| MUX
   MUX --> ALU["EX ALU"]
-  H["hazard_unit: load-use stall"] -.-> MUX
+  H["hazard_unit: load-use stall, branch flush"] -.-> P["PC, IF/ID hold; ID/EX bubble"]

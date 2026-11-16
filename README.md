@@ -1,32 +1,20 @@
 # 5-Stage Pipelined RISC-V Processor
 
 [![Verilog HDL](https://img.shields.io/badge/Language-Verilog_HDL-blue.svg)](rtl/)
-[![Simulator](https://img.shields.io/badge/Simulator-Icarus_Verilog_13.0-green.svg)](https://steveicarus.github.io/iverilog/)
-[![Tests](https://img.shields.io/badge/Verification-42%2F42_PASS-brightgreen.svg)](docs/VERIFICATION_REPORT.md)
-[![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
-[![Phase](https://img.shields.io/badge/Phase_I-Completed-success.svg)](docs/IEEE_Phase1_Project_Report.md)
+[![Simulator](https://img.shields.io/badge/Simulator-Icarus_Verilog-green.svg)](https://steveicarus.github.io/iverilog/)
+[![Phase](https://img.shields.io/badge/Phase_I-In_Progress-yellow.svg)](docs/interface_spec.md)
 
-Welcome to the **5-Stage Pipelined RISC-V Processor** repository! This is our college engineering project for designing, implementing, and verifying a 32-bit **5-Stage Pipelined RISC-V (RV32I) Processor** using Verilog HDL.
-
----
-
-## 👥 Project Team
-
-| Roll Number | Name | Primary Role & Contributions |
-|:---:|:---|:---|
-| **2401010020** | **Abhishek Patel** | **Project Lead & Primary RTL Developer**<br>Core processor architecture, ALU, Register File, Immediate Generator, and top-level datapath integration. |
-| **2401010519** | **Yogesh Modi** | **Technical Lead, Pipeline Design & Verification**<br>Hazard detection unit, RAW data forwarding logic, testbench development, and simulation verification. |
-| **2401010210** | **Kapish Rohilla** | **Literature Review & Research**<br>RISC-V specification analysis, comparative study of open-source academic cores, and literature review. |
-| **2401010503** | **Vikash Kumar** | **IEEE Report & Documentation**<br>Authoring and formatting the IEEE Phase I report, compiling authentic academic citations, and documentation. |
-| **2401020048** | **Prateek Shakya** | **Architecture Diagrams, GitHub Docs & Video Preparation**<br>Creating SVG block diagrams, diagram guide, video presentation script, and video link coordination. |
+MCA project (Phase I): design, implementation and verification of a 32-bit **5-stage pipelined
+RISC-V processor** supporting a subset of the **RV32I** base integer instruction set, written in
+Verilog HDL and simulated with Icarus Verilog and GTKWave.
 
 ---
 
-## 🎯 Project Objective (Phase I)
+## Project Idea
 
-The goal of Phase I was to build a working, hardware-accurate 5-stage pipelined processor implementing the base integer RISC-V instruction set (RV32I). 
-
-Instead of waiting for one instruction to complete all its operations before starting the next one (single-cycle), our processor overlaps execution across 5 stages like an assembly line:
+A single-cycle processor finishes one instruction completely before starting the next. A pipelined
+processor splits execution into five stages and overlaps them like an assembly line, so up to five
+instructions are in flight at once and throughput approaches one instruction per clock cycle.
 
 ```
 Clock Cycle:   1     2     3     4     5     6     7
@@ -37,194 +25,100 @@ Instruction 4:                   [IF]  [ID]  [EX]  [MEM] [WB]
 Instruction 5:                         [IF]  [ID]  [EX]  [MEM] [WB]
 ```
 
----
+Overlapping instructions creates **hazards**. This design resolves them with:
 
-## 🏗️ Processor Architecture
-
-![Architecture Diagram](diagrams/pipeline_architecture.svg)
-
-*(A detailed step-by-step walkthrough is available in [diagrams/diagram_description.md](diagrams/diagram_description.md))*
-
-### The 5 Pipeline Stages
-1. **Instruction Fetch (IF):** Reads the 32-bit instruction from memory using the Program Counter (PC) and increments `PC = PC + 4`.
-2. **Instruction Decode (ID):** Decodes the opcode and function fields, reads registers from the 32-entry Register File (`x0` is hardwired to 0), and sign-extends immediate values.
-3. **Execute (EX):** The 32-bit ALU performs arithmetic, bitwise, shift, or comparison calculations. Branch addresses are computed here.
-4. **Memory Access (MEM):** Reads from or writes to the 4KB Data Memory for `LW` and `SW` instructions.
-5. **Write-Back (WB):** Selects between the ALU result, memory data, or `PC + 4` and writes back into the destination register (`rd`).
-
-### The 4 Pipeline Registers
-Between each stage sits a synchronous pipeline register that latches data and control signals on every clock tick:
-- `pipe_if_id`: Holds instruction and PC. Can be stalled or flushed.
-- `pipe_id_ex`: Holds register data, immediate, PC, and control signals. Can be flushed.
-- `pipe_ex_mem`: Holds computed ALU result, store data, and memory control lines.
-- `pipe_mem_wb`: Holds memory read data, ALU result, and writeback destination.
-
-### 🛡️ How We Handle Hazards
-- **RAW Data Hazards:** Resolved by the **Data Forwarding Unit**. If an instruction in EX needs a register calculated by an earlier instruction currently in MEM or WB, data is forwarded directly into the ALU input multiplexers without stalling.
-- **Load-Use Data Hazard:** When an instruction immediately depends on data being loaded by `LW`, the data cannot be forwarded in time. Our **Hazard Unit** detects this, pauses the PC and IF/ID registers, and inserts a 1-cycle bubble (NOP).
-- **Control Hazards:** When a conditional branch (`BEQ`, `BNE`, etc.) evaluates to true, instructions speculatively fetched along the wrong path are flushed (converted to NOPs).
+- **Forwarding unit** – passes results from the EX/MEM and MEM/WB registers straight to the ALU inputs.
+- **Hazard detection unit** – stalls one cycle for a load-use dependency and flushes wrongly fetched
+  instructions when a branch or jump is taken.
+- **Register-file bypass** – a value written in WB is visible to the instruction being decoded in the same cycle.
 
 ---
 
-## 📂 Repository Structure
+## Project Team
+
+| Roll Number | Name | Part |
+|:---:|:---|:---|
+| 2401010020 | Abhishek Kumar Patel | Project lead: repository setup, interface specification, IF stage (PC, instruction memory, IF/ID register), top-level integration |
+| 2401010519 | Yogesh Modi | ID stage: register file, immediate generator, main control unit, ID/EX register; literature review |
+| 2401010210 | Kapish Rohilla | EX stage: ALU, ALU control, branch unit, EX stage with forwarding multiplexers, EX/MEM register |
+| 2401010503 | Vikash Kumar | MEM/WB stages and hazards: data memory, MEM/WB register, forwarding unit, hazard detection unit |
+| 2401020048 | Prateek Shakya | Verification (system testbench, test programs, run scripts), diagrams, IEEE report assembly, demo video |
+
+---
+
+## Processor Architecture
+
+| Stage | Work done | Main modules |
+|-------|-----------|--------------|
+| IF | Fetch instruction at PC, compute PC+4 | `pc_reg`, `instr_mem`, `if_id_reg` |
+| ID | Decode, read registers, generate immediate and control signals | `reg_file`, `imm_gen`, `control_unit`, `id_ex_reg` |
+| EX | ALU operation, branch/jump decision and target | `ex_stage` (`alu_control`, `alu`, `branch_unit`), `ex_mem_reg` |
+| MEM | Load / store word | `data_mem`, `mem_wb_reg` |
+| WB | Write ALU result or loaded data to `rd` | write-back mux in `riscv_pipeline_top` |
+
+Hazard logic: `forwarding_unit`, `hazard_unit`. Full port lists and design decisions are in
+[`docs/interface_spec.md`](docs/interface_spec.md).
+
+### Supported instructions (RV32I subset)
+
+| Type | Instructions |
+|------|--------------|
+| R-type | ADD, SUB, AND, OR, XOR, SLL, SRL, SRA, SLT, SLTU |
+| I-type ALU | ADDI, ANDI, ORI, XORI, SLTI, SLTIU, SLLI, SRLI, SRAI |
+| Load / Store | LW, SW |
+| Branch | BEQ, BNE, BLT, BGE |
+| Jump | JAL, JALR |
+| Upper immediate | LUI |
+
+---
+
+## Repository Structure
 
 ```
-5-Stage Pipelined RISC-V Processor/
-├── rtl/                               # Verilog Source Files
-│   ├── riscv_defines.vh               # Constants, opcodes, ALU operation codes
-│   ├── riscv_core.v                   # Top-level 5-stage pipelined processor core
-│   ├── alu.v                          # 32-bit Arithmetic Logic Unit
-│   ├── reg_file.v                     # 32x32-bit Register File (x0=0, bypass)
-│   ├── imm_gen.v                      # Sign-extending Immediate Generator
-│   ├── control_unit.v                 # Instruction decoder & ALU control
-│   ├── hazard_unit.v                  # Data forwarding & load-use stall logic
-│   ├── execution_unit.v               # EX stage with forwarding muxes & ALU
-│   ├── instruction_memory.v           # 4KB instruction ROM/RAM model
-│   ├── data_memory.v                  # 4KB data RAM model
-│   ├── pipe_if_id.v                   # IF/ID pipeline register
-│   ├── pipe_id_ex.v                   # ID/EX pipeline register
-│   ├── pipe_ex_mem.v                  # EX/MEM pipeline register
-│   └── pipe_mem_wb.v                  # MEM/WB pipeline register
-│
-├── testbench/                         # Testbenches & Test Programs
-│   ├── tb_riscv_core.v                # Full pipeline integration testbench
-│   ├── tb_riscv_hazard.v              # RAW hazard forwarding testbench
-│   ├── tb_riscv_mem.v                 # Load/Store & load-use stall testbench
-│   ├── tb_riscv_branch.v              # Branch taken & flush testbench
-│   ├── tb_alu.v                       # ALU unit testbench
-│   ├── tb_reg_file.v                  # Register file unit testbench
-│   ├── tb_hazard_unit.v               # Hazard unit testbench
-│   └── programs/                      # Hex machine code test suites
-│       ├── prog_arithmetic.hex        # Basic arithmetic instructions
-│       ├── prog_hazard.hex            # RAW data hazard test program
-│       ├── prog_load_store.hex        # Memory & load-use stall program
-│       └── prog_branch.hex            # Branch condition test program
-│
-├── diagrams/                          # Architectural Diagrams
-│   ├── pipeline_architecture.svg           # Vector block diagram
-│   ├── simulation_waveform_diagram.svg     # Timing and cycle waveform diagram
-│   └── diagram_description.md         # Detailed diagram walkthrough
-│
-├── docs/                              # Project Documentation & Reports
-│   ├── IEEE_Phase1_Project_Report.pdf  # Compiled IEEE Two-Column Conference PDF
-│   ├── IEEE_Phase1_Project_Report.html # IEEE Conference Format HTML source
-│   ├── IEEE_Phase1_Project_Report.md  # Official IEEE Phase I Report (Markdown)
-│   ├── IEEE_Phase1_Project_Report.tex # IEEE Report LaTeX source file
-│   ├── CONTRIBUTIONS.md               # Detailed individual team contributions
-│   └── VERIFICATION_REPORT.md         # Test coverage & simulation audit
-│
-├── simulation/                        # Simulation Scripts & Real Logs
-│   ├── run_sim.sh                     # Automated bash simulation runner
-│   ├── simulation_results.log         # Real unabridged simulation log
-│   ├── waveform.vcd                   # Core arithmetic VCD waveform
-│   ├── waveform_hazard.vcd            # Forwarding test waveform
-│   ├── waveform_mem.vcd               # Memory & stall waveform
-│   └── waveform_branch.vcd            # Branch flush waveform
-│
-├── video/                             # Video Presentation Deliverables
-│   ├── VIDEO_DEMO_SCRIPT.md           # 5-minute prototype presentation script
-│   └── VIDEO_LINK.md                  # Video demonstration link placeholder
-│
-├── Makefile                           # Quick command runner
-├── LICENSE                            # MIT License
-└── README.md                          # Main project guide
+rtl/                      Verilog source modules (+ defines.vh)
+testbench/unit/           self-checking unit testbench per module (tb_<module>.v)
+testbench/programs/       test programs (.s assembly + .hex machine code)
+testbench/tb_riscv_top.v  system-level testbench
+simulation/               run scripts (build output in simulation/build/, git-ignored)
+diagrams/                 block diagrams, pipeline timing diagrams, waveform screenshots
+docs/interface_spec.md    shared interface specification
+docs/report/              IEEE report (LaTeX sources and compiled PDF)
+video/README.md           demo video link
 ```
 
 ---
 
-## ⚡ Quickstart: Running Simulations
+## How to Run
 
 ### Prerequisites
-You need **Icarus Verilog** (`iverilog`) and **GTKWave** (optional, for viewing waveforms).
-- On macOS (Homebrew):
-  ```bash
-  brew install icarus-verilog gtkwave
-  ```
-- On Ubuntu/Debian Linux:
-  ```bash
-  sudo apt-get install iverilog gtkwave
-  ```
+- **Icarus Verilog** and **GTKWave**
+  - macOS: `brew install icarus-verilog` and `brew install --cask gtkwave`
+  - Ubuntu/Debian: `sudo apt-get install iverilog gtkwave`
 
-### Run All Verification Tests
-To compile and run every unit test and full pipeline testbench in one go:
+### Run a unit testbench
 ```bash
-./simulation/run_sim.sh
-```
-Or simply:
-```bash
-make test
+mkdir -p simulation/build
+iverilog -g2012 -I rtl -o simulation/build/tb_pc_reg.vvp rtl/pc_reg.v testbench/unit/tb_pc_reg.v
+vvp simulation/build/tb_pc_reg.vvp
 ```
 
-### Run Specific Testbenches
-- **Top-level Pipeline Test:** `make test_core`
-- **Data Forwarding Test:** `make test_hazard`
-- **Memory & Stall Test:** `make test_mem`
-- **Branch Flush Test:** `make test_branch`
-- **ALU Unit Test:** `make test_alu`
-
-### Viewing Waveforms
-Open any of the generated `.vcd` files in GTKWave:
-```bash
-gtkwave simulation/waveform.vcd
-```
+### Run the full test suite
+A single script (`simulation/run_all.sh`) will run every unit and system test once integration is complete.
+This section will be updated with the final commands.
 
 ---
 
-## 📊 Verification Results (Phase I)
+## Deliverables
 
-All 42 automated assertions passed with zero failures across seven testbenches:
+- IEEE report: [`docs/report/`](docs/report/)
+- Demo video: [`video/README.md`](video/README.md)
 
-```
-================================================================================
-      5-STAGE PIPELINED RISC-V PROCESSOR - FULL VERIFICATION SUITE         
-================================================================================
+## Status
 
->>> 1. ALU Unit Test............................. [PASS 10/10]
->>> 2. Register File Test (x0 check & bypass).... [PASS  3/3]
->>> 3. Hazard Unit Test (fwd, stall & flush)..... [PASS  4/4]
->>> 4. Full Pipeline Arithmetic Program.......... [PASS 10/10]
->>> 5. RAW Data Hazard Forwarding Program........ [PASS  4/4]
->>> 6. Memory Load/Store & Load-Use Stall........ [PASS  6/6]
->>> 7. Branch Condition & Pipeline Flush......... [PASS  5/5]
+Phase I — in progress. Module development is split across team branches and merged through pull requests.
 
---------------------------------------------------------------------------------
-TOTAL ASSERTIONS: 42 | PASSED: 42 (100%) | FAILED: 0
-================================================================================
-```
+## Reference
 
-A complete cycle-by-cycle execution trace can be found in [`simulation/simulation_results.log`](simulation/simulation_results.log).
-
----
-
-## 📹 Video Demonstration
-
-A 5-minute video presentation covering the project introduction, member roles, architecture walkthrough, Verilog code review, and live simulation is documented in [`video/VIDEO_DEMO_SCRIPT.md`](video/VIDEO_DEMO_SCRIPT.md).
-
-- **Demonstration Video Link:** See [`video/VIDEO_LINK.md`](video/VIDEO_LINK.md) for the active submission URL placeholder.
-
----
-
-## 🗺️ Project Status & Roadmap
-
-### Completed in Phase I:
-- [x] Full 5-stage pipelined datapath (IF, ID, EX, MEM, WB).
-- [x] 4 Pipeline registers with stall and flush controls.
-- [x] RV32I basic instructions (Arithmetic, Logic, Shifts, Comparisons, LW, SW, BEQ, BNE, JAL).
-- [x] Hardware forwarding unit for RAW data hazards.
-- [x] Hardware load-use stall unit (1-cycle bubble injection).
-- [x] Control hazard pipeline flushes on taken branches.
-- [x] Real simulation runs, testbenches, and waveforms.
-- [x] IEEE Phase I Project Report and architecture diagrams.
-
-### Pending / Planned for Phase II:
-- [ ] Control and Status Registers (CSRs) for exception handling.
-- [ ] Hardware timer and external interrupts.
-- [ ] Dynamic branch prediction (2-bit saturating branch history table).
-- [ ] RV32M hardware multiplier and divider extension.
-- [ ] Synthesis and FPGA prototype demo on a Xilinx Artix-7 / Basys 3 board.
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
+The design was studied alongside the open-source project
+[protocolx-riscv-pipelined-processor](https://github.com/naveendhaterwal/protocolx-riscv-pipelined-processor);
+all code in this repository is written by the team.

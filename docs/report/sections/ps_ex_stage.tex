@@ -1,0 +1,139 @@
+% =============================================================================
+% Proposed Solution - Execute (EX) stage
+% Author: Kapish Rohilla (2401010210)
+% =============================================================================
+\subsection{Execute Stage}
+\label{sec:ex_stage}
+
+The Execute (EX) stage performs all arithmetic and logic operations, computes
+load/store addresses, and resolves branches and jumps. It is implemented by the
+wrapper module \texttt{ex\_stage}, which contains the operand forwarding
+multiplexers and instantiates three sub-modules: \texttt{alu\_control},
+\texttt{alu} and \texttt{branch\_unit}. Its results are latched into the
+EX/MEM pipeline register (\texttt{ex\_mem\_reg}). Instruction encodings follow
+the RISC-V unprivileged specification~\cite{kapish_riscv_isa}, and the overall
+organisation follows the classic five-stage pipeline described
+in~\cite{kapish_patterson_riscv, kapish_harris_riscv}.
+
+\subsubsection{Arithmetic Logic Unit}
+The ALU is purely combinational. A 4-bit control code selects one of ten
+operations (Table~\ref{tab:alu_ops}). Shift amounts use only the low five bits
+of operand $B$, as required for RV32I. The \texttt{zero} output is asserted
+when the result is zero; branch decisions, however, are taken in the branch
+unit, not from this flag.
+
+\begin{table}[htbp]
+\caption{ALU operations}
+\label{tab:alu_ops}
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Code} & \textbf{Operation} & \textbf{Result} \\
+\hline
+0 & ADD  & $A + B$ \\
+1 & SUB  & $A - B$ \\
+2 & AND  & $A \,\&\, B$ \\
+3 & OR   & $A \mid B$ \\
+4 & XOR  & $A \oplus B$ \\
+5 & SLL  & $A \ll B[4{:}0]$ \\
+6 & SRL  & $A \gg B[4{:}0]$ (zero fill) \\
+7 & SRA  & $A \gg B[4{:}0]$ (sign fill) \\
+8 & SLT  & $1$ if $A < B$ (signed), else $0$ \\
+9 & SLTU & $1$ if $A < B$ (unsigned), else $0$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{ALU Control}
+The main control unit in ID produces a 2-bit \texttt{alu\_op}. The ALU control
+unit combines it with \texttt{funct3} (instr[14:12]) and \texttt{funct7[5]}
+(instr[30]) to produce the 4-bit ALU code (Table~\ref{tab:alu_ctrl}).
+For I-type instructions, bit 30 belongs to the immediate, so \texttt{funct3}
+$=000$ is always decoded as ADDI and never as SUB; bit 30 is used only to
+distinguish SRAI from SRLI.
+
+\begin{table}[htbp]
+\caption{ALU control decoding}
+\label{tab:alu_ctrl}
+\centering
+\begin{tabular}{|c|c|c|l|}
+\hline
+\textbf{alu\_op} & \textbf{funct3} & \textbf{funct7[5]} & \textbf{ALU operation} \\
+\hline
+00 & x   & x & ADD (LW, SW, LUI) \\
+01 & x   & x & SUB (branches) \\
+\hline
+10 & 000 & 0/1 & ADD / SUB \\
+10 & 001 & x & SLL \\
+10 & 010 & x & SLT \\
+10 & 011 & x & SLTU \\
+10 & 100 & x & XOR \\
+10 & 101 & 0/1 & SRL / SRA \\
+10 & 110 & x & OR \\
+10 & 111 & x & AND \\
+\hline
+11 & 000 & x & ADD (ADDI) \\
+11 & 001 & x & SLL (SLLI) \\
+11 & 010 & x & SLT (SLTI) \\
+11 & 011 & x & SLTU (SLTIU) \\
+11 & 100 & x & XOR (XORI) \\
+11 & 101 & 0/1 & SRL / SRA (SRLI / SRAI) \\
+11 & 110 & x & OR (ORI) \\
+11 & 111 & x & AND (ANDI) \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Operand Forwarding Multiplexers}
+To avoid stalling on read-after-write dependences, each register operand passes
+through a 3-input multiplexer controlled by the forwarding unit:
+\texttt{2'b10} selects the EX/MEM result, \texttt{2'b01} selects the
+write-back value from MEM/WB, and \texttt{2'b00} selects the value read from
+the register file in ID. EX/MEM has priority because it holds the most recent
+value. After forwarding, operand $A$ is forced to zero for LUI (so the ALU
+computes $0 + \mathit{imm}$), and operand $B$ is replaced by the immediate when
+\texttt{alu\_src} is set. The forwarded $rs2$ value is also passed on as
+\texttt{store\_data}, so a store always writes the latest value of its source
+register.
+
+\subsubsection{Branch and Jump Resolution}
+The branch unit evaluates BEQ, BNE, BLT and BGE on the forwarded operands
+(BLT and BGE use signed comparison). It asserts
+\[
+\mathit{pc\_src} = (\mathit{branch} \wedge \mathit{cond}) \vee \mathit{jump} \vee \mathit{jalr}
+\]
+and computes the target as $\mathit{pc} + \mathit{imm}$ for branches and JAL,
+or $(\mathit{rs1} + \mathit{imm})$ with bit~0 cleared for JALR, as required
+by the specification~\cite{kapish_riscv_isa}. The pipeline predicts every
+branch as not taken. Because the decision is made in EX, two younger
+instructions have already entered IF/ID and ID/EX when a branch or jump is
+taken; the hazard unit flushes both registers, giving a two-cycle penalty.
+Resolving in EX keeps the ID stage simple and lets branches use forwarded
+operands without extra comparison hardware in ID~\cite{kapish_patterson_riscv}.
+
+\subsubsection{Link Address for JAL and JALR}
+JAL and JALR must write the return address $\mathit{pc}+4$ into $rd$. Instead
+of adding a separate write-back path, the EX stage selects
+\[
+\mathit{ex\_result} = (\mathit{jump} \vee \mathit{jalr})\ ?\ \mathit{pc}+4 : \mathit{alu\_result}.
+\]
+The link address therefore travels through EX/MEM and MEM/WB exactly like an
+ALU result, uses the existing write-back multiplexer, and can be forwarded to
+a dependent instruction by the normal forwarding paths.
+
+\subsubsection{EX/MEM Pipeline Register}
+The \texttt{ex\_mem\_reg} module latches \texttt{reg\_write},
+\texttt{mem\_read}, \texttt{mem\_write}, \texttt{mem\_to\_reg},
+\texttt{ex\_result}, \texttt{store\_data} and \texttt{rd} on each rising clock
+edge and clears them on synchronous reset. It needs no flush input: stalls and
+flushes are handled by inserting a bubble into ID/EX, which then flows through
+EX/MEM as an instruction with all control signals zero.
+
+\subsubsection{Verification}
+Each module has a self-checking Icarus Verilog testbench that prints PASS/FAIL
+per check. The tests cover every ALU operation (including negative operands,
+SLT versus SLTU, SRA sign extension and shifts by 31), the ALU-control code
+for every supported instruction, each branch taken and not taken (including
+signed negative operands), JAL and JALR targets, all forwarding selections on
+both operands, the LUI path, the JAL/JALR link value and the EX/MEM register
+reset and pass-through behaviour.

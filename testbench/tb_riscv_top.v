@@ -5,14 +5,12 @@ module tb_riscv_top;
     `define TEST 1
 `endif
 
-`ifdef TEST1
     localparam PROGRAM = (`TEST == 1) ? "testbench/programs/test1_arith.hex" :
                          (`TEST == 2) ? "testbench/programs/test2_loadstore.hex" :
                          (`TEST == 3) ? "testbench/programs/test3_forwarding.hex" :
                          (`TEST == 4) ? "testbench/programs/test4_loaduse.hex" :
                          (`TEST == 5) ? "testbench/programs/test5_branch_jump.hex" :
                                         "testbench/programs/test6_sum_array.hex";
-`endif
 
     reg clk = 1'b0;
     reg rst = 1'b1;

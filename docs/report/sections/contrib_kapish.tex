@@ -1,0 +1,14 @@
+% =============================================================================
+% Individual contribution - Kapish Rohilla (2401010210)
+% =============================================================================
+\paragraph{Kapish Rohilla (2401010210) -- Execute Stage}
+I designed and verified the Execute (EX) stage of the processor. I wrote the
+32-bit ALU supporting the ten RV32I operations used by our instruction subset,
+the ALU control unit that decodes \texttt{alu\_op}, \texttt{funct3} and
+\texttt{funct7[5]}, and the branch unit that resolves BEQ, BNE, BLT, BGE, JAL
+and JALR and computes the branch target. I integrated these into the
+\texttt{ex\_stage} module together with the operand forwarding multiplexers,
+the LUI operand path and the $\mathit{pc}+4$ link-address selection for jumps,
+and wrote the EX/MEM pipeline register. For each of these five modules I wrote
+a self-checking unit testbench and ran it in Icarus Verilog until all checks
+passed. I also wrote the Execute Stage subsection of this report.

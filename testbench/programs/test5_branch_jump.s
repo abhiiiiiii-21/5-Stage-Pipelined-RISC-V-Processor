@@ -10,5 +10,5 @@ blt  x2, x1, 8
 addi x6, x0, 9
 jal  x7, 8
 addi x8, x0, 99
-jalr x9, 0(x7)
+jalr x9, 8(x7)
 jal  x0, 0

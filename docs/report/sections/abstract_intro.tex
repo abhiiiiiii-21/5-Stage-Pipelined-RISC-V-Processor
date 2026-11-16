@@ -1,0 +1,63 @@
+% =============================================================================
+% Abstract and Introduction
+% Author: Abhishek Kumar Patel (2401010020)
+% Included from docs/report/main.tex
+% =============================================================================
+
+\begin{abstract}
+Pipelining is the basic technique that allows a processor to work on several instructions at the
+same time and thereby raise instruction throughput without raising the clock frequency. This
+project presents the design and implementation of a 32-bit, five-stage pipelined processor for a
+subset of the open RISC-V RV32I base integer instruction set, written in Verilog HDL. The datapath
+is divided into Instruction Fetch (IF), Instruction Decode (ID), Execute (EX), Memory Access (MEM)
+and Write-Back (WB) stages separated by four pipeline registers. The supported subset covers
+register--register and register--immediate arithmetic, logic, shift and comparison instructions,
+word loads and stores, conditional branches, jumps and \texttt{LUI}. Data hazards are resolved by a
+forwarding unit that routes results from the EX/MEM and MEM/WB registers to the ALU inputs, by a
+register file with write-first bypass, and by a hazard detection unit that inserts a one-cycle bubble
+for load-use dependencies. Control hazards are handled by resolving branches and jumps in the EX stage
+with a predict-not-taken policy and flushing the two wrongly fetched instructions. Every module is
+verified with a self-checking testbench in Icarus Verilog, and complete programs are verified at
+system level with waveform inspection in GTKWave. This report describes the Phase-I design and
+implementation progress.
+\end{abstract}
+
+\begin{IEEEkeywords}
+RISC-V, RV32I, pipelined processor, Verilog HDL, data forwarding, hazard detection, computer architecture
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+RISC-V is an open, royalty-free instruction set architecture (ISA) originally developed at the
+University of California, Berkeley~\cite{riscv_spec_unpriv}. Its small and regular base integer
+instruction set, fixed 32-bit instruction length and a small number of instruction formats make it
+well suited for teaching and for implementing processors in hardware description languages.
+
+A single-cycle processor completes every instruction in one long clock cycle, so the clock period
+is set by the slowest instruction and most of the hardware is idle for most of the cycle.
+Pipelining divides instruction execution into stages and starts a new instruction in every clock
+cycle, so that, in the ideal case, one instruction completes per cycle and throughput increases by
+up to the number of stages~\cite{patterson_riscv, hennessy_quant}. The cost of pipelining is the
+appearance of \emph{hazards}: an instruction may need a result that an earlier instruction has not
+yet written back (data hazard), or the processor may fetch instructions from the wrong path before a
+branch is resolved (control hazard). Correct and efficient handling of these hazards is the central
+design problem of a pipelined processor.
+
+The objectives of this project are:
+\begin{enumerate}
+  \item to design a five-stage (IF, ID, EX, MEM, WB) pipelined datapath and control unit for a
+        subset of the RV32I instruction set;
+  \item to resolve data hazards with operand forwarding, a register-file bypass and a load-use
+        stall, and control hazards with branch resolution in EX and pipeline flushing;
+  \item to implement the design as modular, synthesizable-style Verilog with a clearly defined
+        interface between modules so that it can be developed in parallel by a team; and
+  \item to verify every module and the complete processor through self-checking simulation.
+\end{enumerate}
+
+The design was studied alongside an existing open-source pipelined RISC-V implementation~\cite{protocolx_repo};
+all modules in this project were written by the team against a common interface specification.
+
+The rest of this report is organised as follows. Section~II reviews related literature.
+Section~III presents the proposed solution: the overall architecture, each pipeline stage, hazard
+handling and the verification methodology. Section~IV lists the individual contributions of the team
+members, followed by the references.

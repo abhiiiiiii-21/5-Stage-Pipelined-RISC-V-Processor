@@ -1,0 +1,113 @@
+% =============================================================================
+% Proposed Solution: overall architecture, IF stage and top-level integration
+% Author: Abhishek Kumar Patel (2401010020)
+% Included from docs/report/main.tex (other stage subsections follow this file)
+% =============================================================================
+
+\section{Proposed Solution}
+
+\subsection{Overall Architecture}
+
+The proposed processor is a 32-bit, in-order, single-issue pipeline with the classic five stages
+described by Patterson and Hennessy~\cite{patterson_riscv}. Fig.~\ref{fig:datapath} shows the complete
+datapath. Each stage is separated from the next by a pipeline register (IF/ID, ID/EX, EX/MEM,
+MEM/WB) that is updated on the rising clock edge, so that each stage works on a different
+instruction in every cycle. Control signals are generated once in the ID stage and travel down the
+pipeline together with the instruction that they belong to.
+
+\begin{figure}[!t]
+  \centering
+  % Path relative to docs/report/main.tex
+  \includegraphics[width=\columnwidth]{../../diagrams/datapath.png}
+  \caption{Datapath of the proposed five-stage pipelined RISC-V processor, including the forwarding
+           unit and the hazard detection unit.}
+  \label{fig:datapath}
+\end{figure}
+
+The supported instructions are listed in Table~\ref{tab:isa}. The encodings follow the RISC-V
+unprivileged specification~\cite{riscv_spec_unpriv}.
+
+\begin{table}[!t]
+  \centering
+  \caption{Supported RV32I Instruction Subset}
+  \label{tab:isa}
+  \begin{tabular}{|l|l|}
+    \hline
+    \textbf{Type} & \textbf{Instructions} \\ \hline
+    R-type        & ADD, SUB, AND, OR, XOR, SLL, SRL, SRA, SLT, SLTU \\ \hline
+    I-type ALU    & ADDI, ANDI, ORI, XORI, SLTI, SLTIU, SLLI, SRLI, SRAI \\ \hline
+    Load / Store  & LW, SW \\ \hline
+    Branch        & BEQ, BNE, BLT, BGE \\ \hline
+    Jump          & JAL, JALR \\ \hline
+    Upper imm.    & LUI \\ \hline
+  \end{tabular}
+\end{table}
+
+\subsubsection*{Design decisions}
+The following decisions were fixed in a shared interface specification before implementation
+started, so that the five team members could develop their modules in parallel:
+\begin{itemize}
+  \item \textbf{Harvard memory organisation:} separate 4\,KB (1024-word) instruction and data
+        memories with combinational read, which removes the structural hazard of a single memory port.
+  \item \textbf{Branch resolution in EX} with a predict-not-taken policy; a taken branch or jump
+        flushes the IF/ID and ID/EX registers, giving a two-cycle penalty.
+  \item \textbf{Operand forwarding} from the EX/MEM and MEM/WB registers to both ALU inputs, with
+        priority to the more recent EX/MEM value.
+  \item \textbf{Load-use stall} of one cycle: the PC and IF/ID register hold their values and a
+        bubble is inserted into ID/EX.
+  \item \textbf{Register-file write-first bypass}, so that a value written in WB is read by the
+        instruction in ID in the same cycle.
+  \item \textbf{Branch flush has priority} over a load-use stall.
+  \item \textbf{Jumps:} \texttt{JAL} and \texttt{JALR} write $PC+4$ to \texttt{rd}; the EX stage
+        selects $PC+4$ instead of the ALU output for these instructions. \texttt{LUI} is executed as
+        $0 + imm$ in the ALU.
+\end{itemize}
+
+\subsection{Instruction Fetch Stage}
+
+The IF stage consists of the program counter register (\texttt{pc\_reg}), the instruction memory
+(\texttt{instr\_mem}) and the PC selection multiplexer.
+
+\textbf{Program counter.} \texttt{pc\_reg} is a 32-bit register that is cleared to address 0 on
+reset. It has an enable input driven by the \texttt{pc\_write} signal of the hazard detection unit:
+when a load-use hazard is detected, \texttt{pc\_write}~=~0 and the PC holds its value so that the
+same instruction is fetched again in the next cycle.
+
+\textbf{Next-PC selection.} The next PC is chosen by
+\begin{equation}
+  PC_{next} = \begin{cases}
+     branch\_target, & \text{if } pc\_src = 1\\
+     PC + 4,         & \text{otherwise}
+  \end{cases}
+\end{equation}
+where \texttt{pc\_src} and \texttt{branch\_target} come from the branch unit in the EX stage.
+Sequential fetch ($PC+4$) is therefore the default prediction.
+
+\textbf{Instruction memory.} \texttt{instr\_mem} is a 1024-word array that is initialised with NOP
+instructions (\texttt{addi x0, x0, 0}) and then loaded from a hexadecimal program file with
+\texttt{\$readmemh}. Because all instructions are word-aligned, the word index is
+\texttt{addr[11:2]} and the read is combinational, so an instruction is available in the same cycle
+as its address.
+
+\textbf{IF/ID register.} \texttt{if\_id\_reg} stores the fetched instruction and its PC. It has two
+control inputs from the hazard detection unit: \texttt{en} (\texttt{if\_id\_write}) holds the
+register during a stall, and \texttt{flush} (\texttt{if\_id\_flush}) replaces the instruction with
+a NOP when a branch or jump is taken. Flush has priority over the stall, and reset also loads a NOP.
+
+\subsection{Top-Level Integration}
+
+The top module \texttt{riscv\_pipeline\_top} instantiates all stage modules, the four pipeline
+registers, the forwarding unit and the hazard detection unit using the port names defined in the
+shared interface specification. It also contains the two remaining multiplexers of the datapath:
+the next-PC multiplexer described above and the write-back multiplexer
+\begin{equation}
+  wb\_data = \begin{cases}
+     mem\_rdata, & \text{if } mem\_to\_reg = 1\\
+     result,     & \text{otherwise.}
+  \end{cases}
+\end{equation}
+The register source fields \texttt{rs1} = \texttt{instr[19:15]}, \texttt{rs2} = \texttt{instr[24:20]}
+and the destination field \texttt{rd} = \texttt{instr[11:7]} are extracted from the IF/ID
+instruction and sent both to the register file and to the hazard detection unit. The value
+written back in WB is also used as the MEM/WB forwarding source, and the EX/MEM \texttt{result} is
+used as the EX/MEM forwarding source and as the data-memory address.

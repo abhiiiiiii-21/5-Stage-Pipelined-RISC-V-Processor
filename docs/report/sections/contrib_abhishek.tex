@@ -1,0 +1,18 @@
+% =============================================================================
+% Individual contribution: Abhishek Kumar Patel (2401010020)
+% Included from the Individual Contributions section of docs/report/main.tex
+% =============================================================================
+
+\subsection{Abhishek Kumar Patel (2401010020) -- Project Lead}
+
+Abhishek led the project and set up the shared GitHub repository, its branch workflow and the
+\texttt{.gitignore}. He wrote the interface specification (\texttt{docs/interface\_spec.md}) and the
+common constants file \texttt{rtl/defines.vh}, which fixed the instruction subset, the
+micro-architecture decisions and every module's port list so that all members could work in
+parallel without integration conflicts. He designed and implemented the Instruction Fetch stage
+(\texttt{pc\_reg} with stall enable, \texttt{instr\_mem} loaded from hex files, and the
+\texttt{if\_id\_reg} pipeline register with stall and flush) together with their self-checking
+unit testbenches, and integrated all modules into the top-level processor
+\texttt{riscv\_pipeline\_top}, including the next-PC and write-back multiplexers. He also maintains
+the project README and wrote the Abstract, Introduction and the architecture, IF-stage and
+integration parts of the Proposed Solution in this report.

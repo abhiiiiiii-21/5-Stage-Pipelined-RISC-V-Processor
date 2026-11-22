@@ -1,0 +1,54 @@
+%% Abstract and introduction text from Phase I.
+This paper presents the design, implementation and functional verification of a
+32-bit, five-stage pipelined processor for a subset of the RISC-V RV32I base integer
+instruction set. The processor is written in synthesizable-style Verilog HDL and is
+organised into the classic Instruction Fetch (IF), Instruction Decode (ID), Execute (EX),
+Memory (MEM) and Write-Back (WB) stages, separated by four pipeline registers. It supports
+29 instructions covering register and immediate arithmetic, logical and shift operations,
+word loads and stores, conditional branches, jumps and upper-immediate loads. Data hazards
+are resolved by a forwarding unit that bypasses results from the EX/MEM and MEM/WB
+registers to the ALU, a hazard detection unit that inserts a single-cycle bubble for
+load-use dependencies, and a write-first register file. Control hazards are handled by
+resolving branches and jumps in the EX stage under a predict-not-taken policy, flushing
+two wrongly fetched instructions on a taken transfer. Structural hazards are avoided by
+separate instruction and data memories. The design was verified with Icarus Verilog using
+16 self-checking unit testbenches (204 checks) and six system-level assembly programs
+(36 architectural-state checks), all of which pass. A testbench performance counter
+measures cycles per instruction (CPI) on every program; including pipeline fill, the
+measured CPI ranges from 1.19 to 2.09, and every cycle count matches the analytical
+model $N + 4 + S + 2T$ for $N$ instructions, $S$ load-use stalls and $T$ taken branches
+or jumps.
+
+\section{Introduction}
+A single-cycle processor completes every instruction in one long clock cycle, so the clock
+period is set by the slowest instruction. Pipelining divides instruction execution into
+stages and overlaps the stages of consecutive instructions, in the same way as an assembly
+line. In the ideal case one instruction completes every cycle, and the clock period is set
+by the slowest \emph{stage} rather than the slowest instruction~\cite{pattersonRV,hennessyQA}.
+
+Overlapping instructions introduces \emph{hazards}: an instruction may need a result that
+has not yet been written back (data hazard), the next instruction address may not yet be
+known (control hazard), or two stages may need the same resource (structural hazard).
+A correct pipelined processor must detect and resolve all three.
+
+RISC-V is an open, royalty-free instruction set architecture developed at the University
+of California, Berkeley~\cite{rvmanual,asanovic2014free}. Its regular, fixed-length
+32-bit encoding and small base integer set make it well suited to teaching and to
+hardware design projects. This project implements an RV32I subset on a five-stage
+pipeline with full forwarding and hazard handling, and verifies it in simulation.
+
+The main contributions of this work are:
+\begin{itemize}
+  \item a modular Verilog implementation of a five-stage RV32I pipeline whose modules
+        share one header of opcodes and control codes;
+  \item forwarding, load-use stall and branch-flush logic that together resolve all
+        data and control hazards for the supported instructions;
+  \item a self-checking verification suite of unit testbenches and assembly programs,
+        run by a single script.
+\end{itemize}
+
+Section~II reviews related work. Section~III describes the proposed design.
+Section~IV reports verification and performance results, and Section~V lists
+individual contributions.
+
+% ---------------------------------------------------------------------------

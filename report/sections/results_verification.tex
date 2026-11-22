@@ -1,9 +1,11 @@
-\section{Verification and Performance}
+\subsection{Verification}
 Every module has a self-checking unit testbench that applies directed stimulus, prints
 PASS or FAIL for each check and dumps a VCD waveform. Six assembly programs exercise the
 full pipeline; the system testbench runs each program for 300 cycles and then checks
 register and data-memory contents. A single script, \texttt{simulation/run\_all.sh}, runs
-the whole suite. Table~\ref{tab:tests} summarises the results; all checks pass.
+the whole suite, including the single-cycle baseline, the benchmarks and the equivalence
+tests of Phase~II. Table~\ref{tab:tests} summarises the Phase~I checks on the pipeline
+and its unit testbenches; all checks pass.
 
 During system testing four testbench-side defects were found and fixed: the hex image
 of test~1 had lost one instruction and encoded SRAI as SRLI, the hex encoding of three
@@ -23,7 +25,7 @@ of them required a change to the processor RTL.
 \textbf{Testbench / Program} & \textbf{Checks} & \textbf{Result} \\ \midrule
 \multicolumn{3}{@{}l}{\textit{Unit testbenches}} \\
 \texttt{pc\_reg}, \texttt{instr\_mem}, \texttt{if\_id\_reg} & 21 & PASS \\
-\texttt{reg\_file}, \texttt{imm\_gen}, \texttt{control\_unit}, \texttt{id\_ex\_reg} & 53 & PASS \\
+\texttt{reg\_file}, \texttt{reg\_file\_nobypass}, \texttt{imm\_gen}, \texttt{control\_unit}, \texttt{id\_ex\_reg} & 63 & PASS \\
 \texttt{alu}, \texttt{alu\_control}, \texttt{branch\_unit}, \texttt{ex\_stage}, \texttt{ex\_mem\_reg} & 101 & PASS \\
 \texttt{data\_mem}, \texttt{mem\_wb\_reg}, \texttt{forwarding\_unit}, \texttt{hazard\_unit} & 29 & PASS \\ \midrule
 \multicolumn{3}{@{}l}{\textit{System programs}} \\
@@ -33,13 +35,13 @@ of them required a change to the processor RTL.
 4: load-use stall & 3 & PASS \\
 5: branches, JAL, JALR, flush & 6 & PASS \\
 6: array-sum loop & 2 & PASS \\ \midrule
-\textbf{Total} & \textbf{240} & \textbf{PASS} \\ \bottomrule
+\textbf{Total} & \textbf{250} & \textbf{PASS} \\ \bottomrule
 \end{tabular}
 \end{table}
 
 
 Table~\ref{tab:programs} describes the six system programs. Each is written in RISC-V
-assembly (\texttt{.s}) and hand-assembled into a hex image loaded by the instruction
+assembly (\texttt{.s}) and converted by our assembler \texttt{tools/assemble.py} into a hex image loaded by the instruction
 memory. Every program ends with \texttt{jal x0,0}, an infinite loop that keeps the
 pipeline in a known state until the checks run.
 
@@ -152,49 +154,19 @@ Without forwarding, each would have to wait until its producer wrote the registe
 Test~6, a five-iteration loop, has the most realistic mix. Its five load-use stalls and
 four taken \texttt{bne} branches cost 13 of its 57 cycles.
 
-As a baseline, consider a non-pipelined (multicycle) design with the same stages and the
-same clock period, which needs five cycles for every instruction, i.e.\ $5N$ cycles.
-Fig.~\ref{fig:cycles} compares it with the measured pipeline. On test~6 the pipeline
-needs 57 cycles instead of 200, a speed-up of $200/57 \approx 3.5\times$, below the ideal
-$5\times$ because of fill, stall and flush cycles. A single-cycle design has CPI~$=1$ but
-a clock period about as long as all five stages together, so its execution time is close
-to the multicycle baseline. Synthesis results (resource use and maximum clock frequency),
-which would convert these cycle counts into time, are planned for Phase~II.
-
-\begin{figure}[!t]
-\centering
-\begin{tikzpicture}[x=1.05cm, y=0.0215cm, font=\scriptsize]
-\draw[->] (0,0) -- (6.6,0);
-\draw[->] (0,0) -- (0,215) node[above, font=\scriptsize] {cycles};
-\foreach \v in {0,50,100,150,200} {\draw (-0.05,\v) -- (0,\v); \node[anchor=east, font=\tiny] at (-0.05,\v) {\v};}
-\foreach \i/\n/\c/\name in {1/21/25/arith, 2/7/11/ld-st, 3/6/10/fwd, 4/5/10/ld-use, 5/11/23/branch, 6/40/57/sum} {
-  \pgfmathtruncatemacro{\b}{5*\n}
-  \fill[gray!45] (\i-0.62,0) rectangle (\i-0.27,\b);
-  \fill[blue!60!black] (\i-0.25,0) rectangle (\i+0.1,\c);
-  \node[font=\tiny, anchor=south] at (\i-0.445,\b) {\b};
-  \node[font=\tiny, anchor=south] at (\i-0.075,\c) {\c};
-  \node[font=\tiny, anchor=north] at (\i-0.26,-2) {\name};
-}
-\fill[gray!45] (1.6,195) rectangle (1.8,205); \node[anchor=west, font=\tiny] at (1.85,200) {non-pipelined, $5N$};
-\fill[blue!60!black] (1.6,175) rectangle (1.8,185); \node[anchor=west, font=\tiny] at (1.85,180) {5-stage pipeline (measured)};
-\end{tikzpicture}
-\caption{Total cycles per test program: measured five-stage pipeline versus a
-non-pipelined baseline that needs five cycles per instruction at the same clock period.}
-\label{fig:cycles}
-\end{figure}
+The programs above are short, so Section~\ref{sec:perf} repeats the comparison on six larger benchmarks against a real single-cycle baseline and converts cycle counts into execution time using the synthesised clock frequencies of Section~\ref{sec:synth}.
 
 \subsection*{Demonstration Video}
 A demonstration video introducing the team, the design and the simulation results is
 available at \url{https://drive.google.com/drive/folders/1MsBRF6YmyPTbTrJbZ43O3noa1C6fjQQy?usp=sharing}.
 
-\subsection*{Limitations and Phase II Plan}
+\subsection*{Limitations}
 The design supports only word loads and stores, a subset of branches, and no CSR,
 exception or interrupt handling. Branches use static not-taken prediction, so every taken
 branch costs two cycles. The hazard unit also compares the \texttt{rs2} field for every
 instruction, so an I-type instruction whose immediate bits happen to match a load's
 destination can stall one unnecessary cycle; this is safe but slightly conservative.
-Phase~II will add synthesis results, larger benchmark programs and a fuller performance
-discussion.
+The synthesis results and benchmark comparison of Phase~II are given in the following sections.
 
 % ---------------------------------------------------------------------------
 

@@ -1,0 +1,27 @@
+123452b7 // lui x5, 0x12345
+67828293 // addi x5, x5, 0x678
+10000393 // addi x7, x0, 0x100
+01000413 // addi x8, x0, 16
+00d29313 // slli x6, x5, 13
+0062c2b3 // xor x5, x5, x6
+0112d313 // srli x6, x5, 17
+0062c2b3 // xor x5, x5, x6
+00529313 // slli x6, x5, 5
+0062c2b3 // xor x5, x5, x6
+0053a023 // sw x5, 0(x7)
+00438393 // addi x7, x7, 4
+fff40413 // addi x8, x8, -1
+fc041ee3 // bne x8, x0, gen
+10000513 // addi x10, x0, 0x100
+13c00613 // addi x12, x0, 0x13c
+10000593 // addi x11, x0, 0x100
+0005a683 // lw x13, 0(x11)
+0045a703 // lw x14, 4(x11)
+00d75663 // bge x14, x13, noswap
+00e5a023 // sw x14, 0(x11)
+00d5a223 // sw x13, 4(x11)
+00458593 // addi x11, x11, 4
+fec5c4e3 // blt x11, x12, inner
+ffc60613 // addi x12, x12, -4
+fcc54ee3 // blt x10, x12, outer
+0000006f // jal x0, 0

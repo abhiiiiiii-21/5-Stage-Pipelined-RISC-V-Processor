@@ -1,12 +1,3 @@
-% Owner: Yogesh Modi. Phase II individual contribution paragraph.
-\textbf{Yogesh Modi (2401010519)} -- In Phase~II, set up the open-source
-synthesis flow with Yosys and nextpnr and wrote \texttt{synth/run\_synth.sh},
-which synthesises the pipeline or the single-cycle baseline, checks that the
-program is in the instruction ROM, places and routes the design with a fixed
-seed, raises the target frequency until it fails and writes the resource and
-Fmax summary used for the speed-up comparison. Found that the simulation-only
-NOP fill removed the program from the synthesised ROM and added the
-\texttt{`ifndef SYNTHESIS} guard. Found that the single-cycle design does not
-fit the iCE40 HX8K and ran both designs on the ECP5-85F instead, wrote the
-per-module breakdown script for the pipeline and analysed the critical paths.
-Wrote the literature review and the synthesis results section of this report.
+\textbf{Yogesh Modi} -- Designed the ID stage: the register file with
+write-first bypass, the immediate generator for all five formats, the main control unit
+and the ID/EX pipeline register, each with a unit testbench. Wrote the literature review.

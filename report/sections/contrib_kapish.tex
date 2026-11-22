@@ -1,13 +1,4 @@
-% Owner: Kapish Rohilla. Phase II individual contribution paragraph.
-\textbf{Kapish Rohilla (2401010210)} -- In Phase~II, wrote the two-pass
-assembler \texttt{tools/assemble.py} for the 29-instruction subset, with an
-instruction-mix report and a self-test that re-assembles the Phase~I programs
-and checks them word for word against the committed hex files. Wrote the six
-benchmark programs (Fibonacci, array sum, bubble sort, GCD, memory copy with
-checksum, shift-and-add multiplication), computed their expected results
-independently in Python, and wrote the self-checking benchmark testbench
-\texttt{tb\_bench.v}, which runs each program on both the pipeline and the
-single-cycle baseline, together with the runner script \texttt{run\_bench.sh}
-that produces the instruction, cycle, stall and taken-branch counts used in the
-performance comparison. Wrote the assembler and benchmark section of this
-report.
+\textbf{Kapish Rohilla} -- Designed the EX stage: the ten-operation ALU, the
+ALU control decoder, the branch unit for BEQ/BNE/BLT/BGE/JAL/JALR, the EX-stage wrapper
+with operand-forwarding multiplexers and link-address selection, and the EX/MEM pipeline
+register, each with a unit testbench.

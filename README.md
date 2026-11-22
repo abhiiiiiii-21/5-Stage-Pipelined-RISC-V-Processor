@@ -2,11 +2,11 @@
 
 [![Verilog HDL](https://img.shields.io/badge/Language-Verilog_HDL-blue.svg)](rtl/)
 [![Simulator](https://img.shields.io/badge/Simulator-Icarus_Verilog-green.svg)](https://steveicarus.github.io/iverilog/)
-[![Phase](https://img.shields.io/badge/Phase_I-Complete-brightgreen.svg)](report/main.pdf)
+[![Phase](https://img.shields.io/badge/Phase_II-Complete-brightgreen.svg)](report/main.pdf)
 
-MCA project (Phase I): design, implementation and verification of a 32-bit **5-stage pipelined
-RISC-V processor** supporting a subset of the **RV32I** base integer instruction set, written in
-Verilog HDL and simulated with Icarus Verilog and GTKWave.
+MCA project (Phase II): design and verification of a 32-bit **5-stage pipelined RISC-V processor**
+and a single-cycle baseline for a subset of the **RV32I** base integer instruction set, written in
+Verilog HDL and measured with Icarus Verilog, Yosys and nextpnr.
 
 ---
 
@@ -81,9 +81,16 @@ rtl/                      Verilog source modules (+ defines.vh)
 testbench/unit/           self-checking unit testbench per module (tb_<module>.v)
 testbench/programs/       test programs (.s assembly + .hex machine code)
 testbench/tb_riscv_top.v  system-level testbench
+testbench/tb_single_cycle.v  single-cycle baseline testbench
+testbench/tb_bench.v      benchmark testbench for both designs
+testbench/tb_equivalence.v pipeline/baseline equivalence testbench
 simulation/               run scripts (build output in simulation/build/, git-ignored)
 diagrams/                 block diagram, pipeline timing, hazard flowchart, waveform and CPI figures
+tools/                    two-pass RISC-V assembler
+synth/                    synthesis scripts and reports
+analysis/                 performance scripts, raw CSV data and plots
 report/                   IEEE report (main.tex source, main.pdf)
+report/sections/          report section files
 video/README.md           demo video link
 ```
 
@@ -107,30 +114,47 @@ vvp simulation/build/tb_pc_reg.vvp
 ```bash
 bash simulation/run_all.sh
 ```
-This runs all 16 unit testbenches and the 6 system programs. Each system test also
-prints a `PERF:` line with the measured instructions, cycles, stalls, taken branches and CPI.
-See [`simulation/README.md`](simulation/README.md) for single tests and GTKWave.
+This runs the unit testbenches, six pipeline and six baseline Phase I programs,
+all benchmark/design combinations and pipeline-versus-baseline equivalence checks.
+See [`simulation/README.md`](simulation/README.md) for individual commands and GTKWave.
+
+### Run benchmarks and equivalence checks
+```bash
+bash simulation/run_bench.sh
+bash simulation/run_equiv.sh
+```
+
+### Reproduce performance and synthesis results
+```bash
+bash analysis/run_perf.sh
+python3 analysis/plot_perf.py
+bash synth/run_synth.sh
+```
 
 ---
 
-## Results (Phase I)
+## Results (Phase II)
 
-| Suite | Checks | Result |
-|-------|--------|--------|
-| 16 unit testbenches | 204 | PASS |
-| 6 system programs | 36 | PASS |
+Raw performance data is in [`analysis/results/perf.csv`](analysis/results/perf.csv) and
+[`analysis/results/speedup.csv`](analysis/results/speedup.csv). Raw synthesis data is in
+[`synth/reports/summary.csv`](synth/reports/summary.csv).
 
-| Program | Instructions | Cycles | CPI |
-|---------|-------------:|-------:|----:|
-| 1 arith | 21 | 25 | 1.19 |
-| 2 loadstore | 7 | 11 | 1.57 |
-| 3 forwarding | 6 | 10 | 1.67 |
-| 4 loaduse | 5 | 10 | 2.00 |
-| 5 branch_jump | 11 | 23 | 2.09 |
-| 6 sum_array | 40 | 57 | 1.43 |
+| Design | LUTs | FFs | BRAMs | Fmax |
+|--------|-----:|----:|------:|-----:|
+| Pipeline | 3300 | 1358 | 4 | 56.55 MHz |
+| Single-cycle | 7392 | 1040 | 2 | 28.43 MHz |
 
-Every cycle count equals `N + 4 + S + 2T` (instructions, pipeline fill, load-use stalls,
-2 cycles per taken branch/jump). Synthesis results are planned for Phase II.
+| Benchmark | Pipeline cycles | Single-cycle cycles | Pipeline CPI | Speed-up |
+|-----------|----------------:|--------------------:|-------------:|---------:|
+| fib | 1095 | 785 | 1.395 | 1.426 |
+| sum | 490 | 330 | 1.485 | 1.340 |
+| sort | 1444 | 920 | 1.570 | 1.267 |
+| gcd | 1238 | 786 | 1.575 | 1.263 |
+| memcpy | 1741 | 1231 | 1.414 | 1.406 |
+| mul | 828 | 570 | 1.453 | 1.369 |
+
+All pipeline cycle counts follow the shared metric contract
+`C = N + 4 + S + 2T`.
 
 ---
 
@@ -142,7 +166,8 @@ Every cycle count equals `N + 4 + S + 2T` (instructions, pipeline fill, load-use
 
 ## Status
 
-Phase I complete: all modules integrated, all tests pass, report and demo video included. Phase II will add synthesis results and further performance analysis.
+Phase II complete: baseline and benchmark infrastructure, synthesis reports,
+performance measurements, equivalence checks and the IEEE report are included.
 
 ## Reference
 

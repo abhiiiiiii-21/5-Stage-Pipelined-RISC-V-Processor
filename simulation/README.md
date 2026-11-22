@@ -13,13 +13,30 @@ brew install --cask gtkwave
 sudo apt-get install iverilog gtkwave
 ```
 
-Run all unit tests and system programs from the repository root:
+Run the complete regression suite from the repository root:
 
 ```sh
-./simulation/run_all.sh
+bash simulation/run_all.sh
 ```
 
-Run one system test:
+This runs 17 unit testbenches, six Phase I pipeline programs, six Phase I
+single-cycle baseline programs, twelve benchmark/design combinations and twelve
+pipeline-versus-baseline equivalence programs. Build and log files are written
+under `simulation/build/`.
+
+Run benchmark tests only:
+
+```sh
+bash simulation/run_bench.sh
+```
+
+Run differential equivalence tests only:
+
+```sh
+bash simulation/run_equiv.sh
+```
+
+Run one pipeline system test:
 
 ```sh
 mkdir -p simulation/build

@@ -1,0 +1,41 @@
+% Owner: Prateek Shakya
+\subsection{Discussion}
+Pipelining changes execution time through two factors: cycle count and clock
+frequency. For a program with $N$ instructions, execution time is
+$C/F_{\max}$, and the speed-up is
+\[
+\frac{C_{\mathrm{single}}/F_{\mathrm{single}}}
+     {C_{\mathrm{pipeline}}/F_{\mathrm{pipeline}}}
+= \frac{C_{\mathrm{single}}}{C_{\mathrm{pipeline}}}
+  \frac{F_{\mathrm{pipeline}}}{F_{\mathrm{single}}}.
+\]
+The measured frequency ratio is $56.55/28.43=1.9891$, while the benchmark cycle
+ratio ranges from $785/1095=0.7169$ for \texttt{fib} to $920/1444=0.6371$ for
+\texttt{sort}. Consequently, the benchmark speed-ups in
+\texttt{analysis/results/speedup.csv} range from 1.2629 for \texttt{gcd} to
+1.4260 for \texttt{fib}.
+
+The pipeline also adds a predictable base of four cycles for fill/retirement.
+Load-use stalls and taken branches or jumps add $S$ and $2T$, respectively.
+This is visible in the measured data: \texttt{bench\_sort} executes 920
+instructions in 1444 cycles with 120 stalls and 200 taken transfers, giving
+CPI $1444/920=1.570$, while \texttt{bench\_memcpy} has 128 stalls and 189 taken
+transfers and reaches CPI $1741/1231=1.414$. The measurements agree with
+$C=N+4+S+2T$ for every pipeline run.
+
+The 56.55~MHz pipeline and 28.43~MHz single-cycle result on the ECP5 E85 target
+demonstrate a hardware-versus-frequency trade-off. The pipeline uses 3300 LUTs,
+1358 FFs and 4 BRAMs; the baseline uses 7392 LUTs, 1040 FFs and 2 BRAMs. The
+pipeline is smaller in logic and faster, but registers and forwarding prevent
+it from remaining faster on programs with severe branch or load-use overhead.
+The tiny \texttt{test4\_loaduse} and \texttt{test5\_branch\_jump} programs do
+not show a positive speed-up (0.9945 and 0.9513), because their cycle reductions
+are too small to compensate for workload overhead.
+
+These conclusions are limited by the benchmark programs, the supported RV32I
+subset and the selected ECP5 target. The benchmarks contain no cache traffic,
+operating-system activity or RV32M instructions, and the synthesis count depends
+on the OSS CAD tool versions, seed and target configuration. Maximum frequency
+is a post-place-and-route timing result, not a silicon measurement. The
+single-cycle and pipelined RTL are therefore evaluated as a controlled design
+comparison rather than as a claim about general-purpose processor performance.

@@ -1,111 +1,45 @@
-% Owner: Yogesh Modi. Literature Review (expanded from the Phase I text).
 \section{Literature Review}
-\label{sec:litreview}
 
-\subsection{RISC and Pipelining}
-Patterson and Ditzel argued that a reduced instruction set with simple,
-uniform instructions allows a simpler and faster implementation than a complex
-instruction set~\cite{yogeshPatterson1980}. The Stanford MIPS project showed
-the same idea in silicon: a pipelined microprocessor in which the compiler and
-the hardware cooperate to keep the pipeline busy~\cite{yogeshHennessy1982}.
-Pipelining itself is older; Kogge describes it as overlapping the stages of
-successive operations so that throughput is set by the slowest stage instead
-of the whole operation~\cite{yogeshKogge1981}. The five-stage
-IF--ID--EX--MEM--WB pipeline of Hennessy and Patterson became the standard
-teaching model~\cite{yogeshHennessyQA,yogeshPattersonRV}, and Harris and Harris
-give single-cycle, multicycle and pipelined RISC-V versions of it in
-HDL~\cite{yogeshHarris2021}. Deeper pipelines raise the clock rate but pay more
-cycles per hazard; Hartstein and Puzak show that this trade-off has an optimum
-depth that depends on the workload~\cite{yogeshHartstein2002}. Our project
-compares the two ends that matter for a teaching core: a single-cycle design
-(CPI~$=1$, long clock period) and the classic five-stage pipeline (CPI~$>1$,
-short clock period). It follows the textbook organisation without changes, so
-its results can be checked against the textbook analysis.
+\subsection{RISC Philosophy and Classic Pipelines}
+Patterson and Ditzel argued that a reduced instruction set with simple, uniform
+instructions allows a simpler and faster implementation than complex instruction
+sets~\cite{patterson1980risc}. The Stanford MIPS project demonstrated a pipelined
+RISC microprocessor in which the compiler and hardware cooperate to keep the pipeline
+busy~\cite{hennessy1982mips}. The five-stage IF--ID--EX--MEM--WB organisation used in
+this project is the classic pipeline described by Hennessy and Patterson, which remains
+the standard teaching model for pipelined datapaths~\cite{hennessyQA,pattersonRV}.
 
-\subsection{Hazards and Forwarding}
-A pipeline must handle three kinds of hazard~\cite{yogeshHennessyQA}.
-Structural hazards are avoided by giving instructions and data separate
-memories, as in our Harvard design. For data hazards there are three main
-approaches. The simplest is to stall the dependent instruction until the
-producer has written the register file; this is correct but costs up to two
-or three cycles for every dependent pair. \emph{Forwarding} (bypassing) instead
-sends a result from the EX/MEM or MEM/WB register straight to the ALU input, so
-most read-after-write dependencies cost no cycle; only a load followed by a
-dependent instruction still needs one stall cycle, because the data arrives at
-the end of MEM~\cite{yogeshPattersonRV}. Dynamic scheduling with Tomasulo's
-algorithm~\cite{yogeshTomasulo1967} goes further and lets independent
-instructions run ahead of a stalled one, but it needs reservation stations,
-register renaming and a common data bus, which is far more hardware than an
-in-order core. Our design uses forwarding plus a one-cycle load-use stall and a
-write-first register file, which is the usual choice for a small in-order
-pipeline: it removes most stall cycles at the cost of two 3-input multiplexers
-and a comparator unit. The price is a longer EX path, since the forwarded value
-passes through a multiplexer before the ALU.
+\subsection{Hazard Resolution Techniques}
+Data hazards can be handled by stalling until the producer writes the register file,
+but this wastes cycles for every dependent pair. \emph{Forwarding} (bypassing) instead
+routes a result from a later pipeline register directly to the ALU input, so most
+read-after-write dependencies cost no cycles~\cite{pattersonRV}. A load followed
+immediately by a dependent instruction still needs one stall cycle, because the loaded
+value is available only at the end of MEM. Control hazards are commonly handled by
+predicting the branch outcome; the simplest static scheme predicts not-taken and
+flushes the wrongly fetched instructions when the branch is taken~\cite{hennessyQA}.
+Dynamic scheduling, as in Tomasulo's algorithm~\cite{tomasulo1967}, removes more stalls
+but at a much higher hardware cost and is outside the scope of an in-order design.
 
-\subsection{Branch Handling}
-Control hazards arise because the next PC is known only after the branch is
-resolved. Static schemes need no history: stall until the branch resolves,
-always predict not-taken and flush on a taken branch, or predict by direction
-(backward taken, forward not-taken)~\cite{yogeshHennessyQA}. Smith compared
-these strategies with dynamic predictors that keep per-branch saturating
-counters and found that a 2-bit counter table predicts much better than any
-static rule~\cite{yogeshSmith1981}. Yeh and Patt's two-level adaptive predictor
-adds branch history and reaches still higher accuracy~\cite{yogeshYeh1991}.
-Dynamic predictors pay off in deep pipelines, where a misprediction costs many
-cycles. In our five-stage design a taken branch or jump costs two cycles (it is
-resolved in EX), and predict not-taken needs only the flush signals of the
-hazard unit. A predictor is out of the scope of this project; its likely gain
-can be estimated from the taken-branch counts measured in the performance
-section.
+\subsection{The RISC-V ISA and Open Implementations}
+The RISC-V specification defines a small base integer ISA (RV32I/RV64I) with optional
+standard extensions~\cite{rvmanual,waterman2011}. Asanovi\'c and Patterson made the case
+for a free and open ISA usable by academia and industry alike~\cite{asanovic2014free}.
+Open implementations span a wide range: the Rocket Chip generator produces an in-order
+five-stage core~\cite{rocket2016}, while BOOM is a superscalar out-of-order
+core~\cite{boom2015}. Harris and Harris present single-cycle, multicycle and pipelined
+RISC-V microarchitectures in HDL as a teaching reference~\cite{harrisRV}.
 
-\subsection{The RISC-V ISA and Open-Source Cores}
-RISC-V defines a small base integer ISA (RV32I/RV64I) with optional standard
-extensions~\cite{yogeshRVSpec}, and Asanovi\'c and Patterson argued for it as a
-free and open ISA for academia and industry~\cite{yogeshAsanovic2014}. Its
-fixed 32-bit encoding, with register fields always in the same place, makes it
-easy to read registers in parallel with decoding, which suits a classic
-pipeline. Open implementations cover a wide range of design points. The Rocket
-Chip generator produces an in-order five-stage core with caches and virtual
-memory~\cite{yogeshRocket2016}, and BOOM is a superscalar out-of-order core for
-high performance~\cite{yogeshBoom2015}. At the small end, PicoRV32 is a
-non-pipelined, multi-cycle core optimised for area and
-Fmax~\cite{yogeshPicoRV32}, and the PULP cores trade pipeline depth against
-energy for IoT devices: RI5CY has four stages with DSP
-extensions~\cite{yogeshGautschi2017}, while Zero-riscy and Micro-riscy use two
-stages to save area and power~\cite{yogeshSchiavone2017}. These cores show that
-the number of stages is a design choice driven by the target (area, energy or
-speed), not a fixed rule. Our core is far smaller than all of them (29
-instructions, no caches, no CSRs). It is meant to be read and tested module by
-module, and its single-cycle baseline makes the effect of pipelining
-measurable on the same ISA, memories and test programs.
-
-\subsection{Open-Source FPGA Synthesis Tools}
-Synthesis results are usually obtained with vendor tools, which are closed and
-tied to one device family. Yosys is a free Verilog synthesis suite that
-supports most synthesizable Verilog and maps logic to FPGA primitives such as
-LUTs, carry chains and block RAM~\cite{yogeshWolf2013}. Combined with the
-placer and router nextpnr it forms a complete open flow from Verilog to
-bitstream for commercial Lattice iCE40 and ECP5 devices, with timing-driven
-placement and a static timing report~\cite{yogeshShah2019}. The academic VTR
-flow also covers synthesis to routing and models many FPGA architectures, but
-it targets research architectures rather than commercial
-parts~\cite{yogeshMurray2020}. We use Yosys and nextpnr from the OSS CAD
-Suite~\cite{yogeshOSSCAD} because they are free, scriptable and report
-resource use and maximum frequency for real devices, which our course outline
-asks for. One property of the target devices matters for our design: the block
-RAM of iCE40 and ECP5 has a synchronous (clocked) read
-port~\cite{yogeshICE40DS,yogeshECP5DS}, while our memories have a
-combinational read. Whether a memory can use block RAM therefore depends on
-whether the tool can absorb a register after (or before) the read, which is
-discussed in the synthesis results.
-
-\subsection{Reference Project and Gap Addressed}
+\subsection{Reference Project}
 We studied the open-source \emph{protocolx-riscv-pipelined-processor}
-project~\cite{yogeshProtocolx}, which implements a pipelined RISC-V processor
-in Verilog, while planning the module breakdown and the test approach. All
-code in our repository was written independently by the team. Production cores
-are too large to study line by line, and textbook datapaths are often given
-only as diagrams with CPI estimates. This project fills the gap with a small,
-fully tested five-stage design and a single-cycle baseline built from the same
-modules. Both are measured with the same benchmarks and the same open-source
-synthesis flow, so cycle counts and clock frequency are compared directly.
+project~\cite{protocolx}, which implements a pipelined RISC-V processor in Verilog. It
+helped us plan the module breakdown and test approach. All code in our repository was
+written independently by the team.
+
+\subsection{Gap Addressed}
+Production cores are too large to study line by line, while textbook datapaths are
+often given only as diagrams. This project fills the gap between them: a small, fully
+documented and fully tested five-stage design in which each hazard mechanism is an
+isolated, unit-tested module.
+
+% ---------------------------------------------------------------------------

@@ -16,13 +16,16 @@
 //
 // Parameters  : IMEM_FILE - hex program loaded into instruction memory
 // Ports       : clk - system clock, rst - synchronous active-high reset
+//               dbg_out - write-back data, an observation output so that
+//               synthesis tools keep the design (unused in simulation)
 // Debug       : testbenches read dut.u_reg_file.regs[i] and dut.u_dmem.mem[i]
 // =============================================================================
 module riscv_pipeline_top #(
     parameter IMEM_FILE = ""
 ) (
     input clk,
-    input rst
+    input rst,
+    output [31:0] dbg_out
 );
 
     // =========================================================================
@@ -282,6 +285,7 @@ module riscv_pipeline_top #(
 
     // Write-back mux: loaded data for LW, otherwise ALU result / PC+4.
     assign wb_data = wb_mem_to_reg ? wb_mem_rdata : wb_result;
+    assign dbg_out = wb_data;
 
     // =========================================================================
     // Hazard handling

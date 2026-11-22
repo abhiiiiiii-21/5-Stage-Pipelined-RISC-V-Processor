@@ -19,7 +19,7 @@ measured CPI ranges from 1.19 to 2.09, and every cycle count matches the analyti
 model $N + 4 + S + 2T$ for $N$ instructions, $S$ load-use stalls and $T$ taken branches
 or jumps.
 
-\section{Introduction}
+\newcommand{\PhaseIIntroduction}{
 A single-cycle processor completes every instruction in one long clock cycle, so the clock
 period is set by the slowest instruction. Pipelining divides instruction execution into
 stages and overlaps the stages of consecutive instructions, in the same way as an assembly
@@ -50,5 +50,4 @@ The main contributions of this work are:
 Section~II reviews related work. Section~III describes the proposed design.
 Section~IV reports verification and performance results, and Section~V lists
 individual contributions.
-
-% ---------------------------------------------------------------------------
+}

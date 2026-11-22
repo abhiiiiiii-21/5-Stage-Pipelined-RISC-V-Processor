@@ -1,0 +1,33 @@
+10000a13 // addi x20, x0, 0x100
+03000513 // addi x10, x0, 48
+01200593 // addi x11, x0, 18
+05c000ef // jal x1, gcd
+00aa2023 // sw x10, 0(x20)
+42f00513 // addi x10, x0, 1071
+1ce00593 // addi x11, x0, 462
+04c000ef // jal x1, gcd
+00aa2223 // sw x10, 4(x20)
+10e00513 // addi x10, x0, 270
+0c000593 // addi x11, x0, 192
+03c000ef // jal x1, gcd
+00aa2423 // sw x10, 8(x20)
+09000513 // addi x10, x0, 144
+05900593 // addi x11, x0, 89
+02c000ef // jal x1, gcd
+00aa2623 // sw x10, 12(x20)
+3e800513 // addi x10, x0, 1000
+00700593 // addi x11, x0, 7
+01c000ef // jal x1, gcd
+00aa2823 // sw x10, 16(x20)
+6e400513 // addi x10, x0, 1764
+4ec00593 // addi x11, x0, 1260
+00c000ef // jal x1, gcd
+00aa2a23 // sw x10, 20(x20)
+0000006f // jal x0, 0
+00b50c63 // beq x10, x11, gcd_end
+00b54663 // blt x10, x11, b_big
+40b50533 // sub x10, x10, x11
+ff5ff06f // jal x0, gcd
+40a585b3 // sub x11, x11, x10
+fedff06f // jal x0, gcd
+00008067 // jalr x0, 0(x1)

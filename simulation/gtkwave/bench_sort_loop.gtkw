@@ -1,0 +1,35 @@
+[*]
+[*] GTKWave Analyzer v3.3 (savefile)
+[*] Benchmark Sort: Inner Loop Execution (Load-Use Stall, Forwarding, Branch Flushes)
+[*]
+[dumpfile] "simulation/build/bench_sort_pipeline.vcd"
+[savefile] "simulation/gtkwave/bench_sort_loop.gtkw"
+[timestart] 1980000
+[size] 1200 650
+[pos] -1 -1
+*-16.000000 2030000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treefile] top
+[sst_width] 220
+[signals_width] 220
+[sst_expanded] 1
+[sst_vpaned_repeat] 0
+[pattern_trace] 1
+@28
+tb_bench.dut.clk
+tb_bench.dut.rst
+@22
+tb_bench.dut.if_pc[31:0]
+tb_bench.dut.id_instr[31:0]
+tb_bench.dut.ex_result[31:0]
+tb_bench.dut.wb_data[31:0]
+@28
+tb_bench.dut.forward_a[1:0]
+tb_bench.dut.forward_b[1:0]
+[color] 1
+tb_bench.dut.pc_write
+[color] 1
+tb_bench.dut.if_id_flush
+[color] 1
+tb_bench.dut.id_ex_flush
+[color] 3
+tb_bench.dut.pc_src

@@ -1,0 +1,68 @@
+% Owner: Abhishek Kumar Patel. Abstract and introduction (Phase II).
+% Every number comes from analysis/results/perf.csv, analysis/results/speedup.csv,
+% synth/reports/summary.csv or the run_all.sh summary.
+This paper presents the design, implementation, verification and evaluation of a
+32-bit, five-stage pipelined processor for a subset of the RISC-V RV32I base integer
+instruction set, written in Verilog HDL. The processor has the classic Instruction Fetch,
+Instruction Decode, Execute, Memory and Write-Back stages separated by four pipeline
+registers, and supports 29 instructions: register and immediate arithmetic, logic and
+shifts, word loads and stores, conditional branches, jumps and upper-immediate loads. Data
+hazards are resolved by forwarding from the EX/MEM and MEM/WB registers, a one-cycle stall
+for load-use dependencies and a write-first register file. Branches and jumps are resolved
+in the EX stage under a predict-not-taken policy. To measure what pipelining gains, a
+single-cycle processor with the same instruction set serves as the baseline. A small
+assembler and six benchmark programs of 330 to 1231 instructions each (including bubble sort
+and memory copy) provide realistic workloads. All unit testbenches pass, and the system programs and benchmarks pass on both designs;
+a differential test shows identical final register and memory contents on all twelve
+programs. On the benchmarks the pipeline needs 1.40 to 1.58 cycles per instruction, and
+every cycle count equals $N + 4 + S + 2T$ for $N$ instructions, $S$ load-use stall cycles and $T$ taken
+branches or jumps. Synthesised with the open-source Yosys and nextpnr flow for a Lattice
+ECP5 LFE5U-85F, the pipeline reaches 56.55~MHz against 28.43~MHz for the baseline
+(1.99 times) with 3300 instead of 7392 logic cells. Combining cycles and clock frequency,
+the pipeline runs the six benchmarks 1.26 to 1.43 times faster than the baseline.
+
+\gdef\PhaseIIntroduction{%
+A single-cycle processor completes every instruction in one long clock cycle, so the clock
+period is set by the slowest instruction. Pipelining divides instruction execution into
+stages and overlaps the stages of consecutive instructions, in the same way as an assembly
+line. In the ideal case one instruction completes every cycle, and the clock period is set
+by the slowest \emph{stage} rather than the slowest instruction~\cite{pattersonRV,hennessyQA}.
+
+Overlapping instructions introduces \emph{hazards}: an instruction may need a result that
+has not yet been written back (data hazard), the next instruction address may not yet be
+known (control hazard), or two stages may need the same resource (structural hazard).
+A correct pipelined processor must detect and resolve all three. The benefit of pipelining
+is also not free: stalls and flushes raise the number of cycles per instruction (CPI), and
+only the combination of CPI and clock frequency decides whether a program runs faster.
+
+RISC-V is an open, royalty-free instruction set architecture developed at the University
+of California, Berkeley~\cite{rvmanual,asanovic2014free}. Its regular, fixed-length
+32-bit encoding and small base integer set make it well suited to teaching and to
+hardware design projects. This project implements an RV32I subset on a five-stage
+pipeline with forwarding and hazard handling, and compares it with a single-cycle
+implementation of the same instruction set in simulation and on an FPGA target.
+
+Phase~I delivered the pipelined processor and its verification. Phase~II adds the parts
+needed to evaluate it. The main contributions of this work are:
+\begin{itemize}
+  \item a modular Verilog implementation of a five-stage RV32I pipeline whose modules
+        share one header of opcodes and control codes, with forwarding, load-use stall and
+        branch-flush logic that resolve all data and control hazards of the supported
+        instructions;
+  \item a single-cycle baseline with the same instruction set and memories, reusing the
+        pipeline modules;
+  \item an assembler for the 29 supported instructions and six self-checking benchmark
+        programs;
+  \item a verification suite of unit testbenches, system programs and a differential test
+        that compares the pipeline with the baseline, run by a single script;
+  \item synthesis results (resources and maximum frequency) for both designs with an
+        open-source FPGA flow;
+  \item a performance analysis with measured CPI, IPC, execution time and speed-up, and
+        waveforms of the hazard cases.
+\end{itemize}
+
+Section~II reviews related work. Section~III describes the pipelined processor, the
+single-cycle baseline and the benchmarks. Section~IV reports the verification, synthesis
+and performance results and discusses them. Section~V lists the individual contributions
+and Section~VI concludes.
+}

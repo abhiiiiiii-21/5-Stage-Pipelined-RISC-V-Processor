@@ -1,0 +1,45 @@
+\section{Literature Review}
+
+\subsection{RISC Philosophy and Classic Pipelines}
+Patterson and Ditzel argued that a reduced instruction set with simple, uniform
+instructions allows a simpler and faster implementation than complex instruction
+sets~\cite{patterson1980risc}. The Stanford MIPS project demonstrated a pipelined
+RISC microprocessor in which the compiler and hardware cooperate to keep the pipeline
+busy~\cite{hennessy1982mips}. The five-stage IF--ID--EX--MEM--WB organisation used in
+this project is the classic pipeline described by Hennessy and Patterson, which remains
+the standard teaching model for pipelined datapaths~\cite{hennessyQA,pattersonRV}.
+
+\subsection{Hazard Resolution Techniques}
+Data hazards can be handled by stalling until the producer writes the register file,
+but this wastes cycles for every dependent pair. \emph{Forwarding} (bypassing) instead
+routes a result from a later pipeline register directly to the ALU input, so most
+read-after-write dependencies cost no cycles~\cite{pattersonRV}. A load followed
+immediately by a dependent instruction still needs one stall cycle, because the loaded
+value is available only at the end of MEM. Control hazards are commonly handled by
+predicting the branch outcome; the simplest static scheme predicts not-taken and
+flushes the wrongly fetched instructions when the branch is taken~\cite{hennessyQA}.
+Dynamic scheduling, as in Tomasulo's algorithm~\cite{tomasulo1967}, removes more stalls
+but at a much higher hardware cost and is outside the scope of an in-order design.
+
+\subsection{The RISC-V ISA and Open Implementations}
+The RISC-V specification defines a small base integer ISA (RV32I/RV64I) with optional
+standard extensions~\cite{rvmanual,waterman2011}. Asanovi\'c and Patterson made the case
+for a free and open ISA usable by academia and industry alike~\cite{asanovic2014free}.
+Open implementations span a wide range: the Rocket Chip generator produces an in-order
+five-stage core~\cite{rocket2016}, while BOOM is a superscalar out-of-order
+core~\cite{boom2015}. Harris and Harris present single-cycle, multicycle and pipelined
+RISC-V microarchitectures in HDL as a teaching reference~\cite{harrisRV}.
+
+\subsection{Reference Project}
+We studied the open-source \emph{protocolx-riscv-pipelined-processor}
+project~\cite{protocolx}, which implements a pipelined RISC-V processor in Verilog. It
+helped us plan the module breakdown and test approach. All code in our repository was
+written independently by the team.
+
+\subsection{Gap Addressed}
+Production cores are too large to study line by line, while textbook datapaths are
+often given only as diagrams. This project fills the gap between them: a small, fully
+documented and fully tested five-stage design in which each hazard mechanism is an
+isolated, unit-tested module.
+
+% ---------------------------------------------------------------------------

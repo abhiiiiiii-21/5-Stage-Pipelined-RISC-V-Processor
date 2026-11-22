@@ -197,3 +197,32 @@ Phase~II will add synthesis results, larger benchmark programs and a fuller perf
 discussion.
 
 % ---------------------------------------------------------------------------
+
+\subsection{Phase II Verification Coverage}
+\label{sec:phase2-verification}
+The Phase II regression command is
+\texttt{bash simulation/run\_all.sh}. It combines 17 unit testbenches,
+six Phase I programs on the pipeline, six Phase I programs on the single-cycle
+baseline, twelve benchmark/design runs, and twelve differential
+pipeline/baseline programs. The benchmark runner prints one
+\texttt{BENCH} line per run and the equivalence runner prints one
+\texttt{EQUIV} line per program. The raw benchmark and synthesis values used
+by this report are stored in \texttt{analysis/results/perf.csv},
+\texttt{analysis/results/speedup.csv}, and \texttt{synth/reports/summary.csv}.
+
+\begin{table}[!t]
+\centering
+\caption{Phase II Regression Suites}
+\label{tab:phase2-tests}
+\begin{tabular}{@{}lrl@{}}
+\toprule
+\textbf{Suite} & \textbf{Runs} & \textbf{Coverage} \\
+\midrule
+Unit testbenches & 17 & Module-level directed and self-checking tests \\
+Phase I pipeline & 6 & Architectural state on \texttt{riscv\_pipeline\_top} \\
+Phase I baseline & 6 & Architectural state on \texttt{riscv\_single\_cycle\_top} \\
+Benchmarks & 12 & Six programs on both designs \\
+Equivalence & 12 & Six Phase I programs and six benchmarks \\
+\bottomrule
+\end{tabular}
+\end{table}

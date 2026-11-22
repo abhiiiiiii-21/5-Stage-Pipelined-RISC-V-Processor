@@ -1,0 +1,13 @@
+% Owner: Vikash Kumar. Phase II individual contribution paragraph.
+\textbf{Vikash Kumar (2401010503)} -- In Phase~II, developed the automated performance
+benchmarking and analysis suite (\texttt{analysis/run\_perf.sh},
+\texttt{analysis/compute\_speedup.py}, \texttt{analysis/plot\_perf.py}), which evaluates
+both the 5-stage pipelined processor and the single-cycle baseline across all 12
+programs (six Phase~I system tests and six Phase~II benchmarks). Verified that every
+simulated cycle count rigorously satisfies the analytical model $C = N + 4 + S + 2T$.
+Extracted, configured and documented reproducible GTKWave simulation waveform traces
+(\texttt{simulation/gtkwave/*.gtkw}) and rendered captures
+(\texttt{diagrams/waveforms/*.png}) for data forwarding, load-use stalling,
+branch flushes, and benchmark inner loops. Quantified the speed-up factors attributable
+to pipeline cycle efficiency versus clock frequency scaling from synthesis, and
+authored the performance analysis section of this report.

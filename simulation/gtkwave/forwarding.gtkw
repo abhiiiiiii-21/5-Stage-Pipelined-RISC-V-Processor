@@ -1,0 +1,33 @@
+[*]
+[*] GTKWave Analyzer v3.3 (savefile)
+[*] System Test 3: Forwarding (EX/MEM and MEM/WB to EX)
+[*]
+[dumpfile] "simulation/build/tb_riscv_top_3.vcd"
+[savefile] "simulation/gtkwave/forwarding.gtkw"
+[timestart] 20000
+[size] 1200 650
+[pos] -1 -1
+*-16.000000 55000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treefile] top
+[sst_width] 220
+[signals_width] 220
+[sst_expanded] 1
+[sst_vpaned_repeat] 0
+[pattern_trace] 1
+@28
+tb_riscv_top.dut.clk
+tb_riscv_top.dut.rst
+@22
+tb_riscv_top.dut.if_pc[31:0]
+tb_riscv_top.dut.id_instr[31:0]
+tb_riscv_top.dut.ex_result[31:0]
+tb_riscv_top.dut.wb_data[31:0]
+@28
+[color] 2
+tb_riscv_top.dut.forward_a[1:0]
+[color] 2
+tb_riscv_top.dut.forward_b[1:0]
+tb_riscv_top.dut.pc_write
+tb_riscv_top.dut.if_id_flush
+tb_riscv_top.dut.id_ex_flush
+tb_riscv_top.dut.pc_src

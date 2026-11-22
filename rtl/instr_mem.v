@@ -28,8 +28,10 @@ module instr_mem #(
 
     integer i;
     initial begin
+`ifndef SYNTHESIS
         for (i = 0; i < DEPTH; i = i + 1)
             mem[i] = `NOP;
+`endif
         if (MEM_FILE != "")
             $readmemh(MEM_FILE, mem);
     end
